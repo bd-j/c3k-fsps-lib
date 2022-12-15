@@ -1,4 +1,4 @@
-cd $HOME/Projects/c3k-fsps-lib
+cd $HOME/Projects/c3k-fsps-lib/src
 
 # name of directory
 libname=nirspec
