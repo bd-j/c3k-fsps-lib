@@ -1,0 +1,10 @@
+# This file lists the wavelength segments and resolution of the downsampled C3K
+# library, in the format (wave_low, wave_high, R, use_fft)
+# The units are AA, AA, lambda/FWHM, boolean
+
+segments:
+  - [100, 1000, 250, False]
+  - [1000, 2750, 500, True]
+  - [2750, 9100, 3000, True]
+  - [9100, 24000, 500, True]
+  - [24000, 100000000, 50, True]
