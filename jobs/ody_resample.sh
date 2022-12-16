@@ -19,7 +19,7 @@ cd $PROJECT_DIR/src
 # location of fullres and flux HDF5 files
 fulldir=/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/{}/fullres
 # segment specification
-segments=$PROJECT_DIR/segements/segments_${libname}.yml
+segments=$PROJECT_DIR/segments/segments_${libname}.yml
 # directory and label for output
 seddir=$PROJECT_DIR/output/${libname}
 mkdir -p $seddir

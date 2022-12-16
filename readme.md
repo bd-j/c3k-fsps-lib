@@ -95,7 +95,7 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
         -  INTEGER, PARAMETER :: nspec=11149  !46666 !47378 !, 26500
         +  CHARACTER(11), PARAMETER :: spec_type = 'c3k_afe+0.0'
         +  INTEGER, PARAMETER :: nzinit=11
-        +  INTEGER, PARAMETER :: nspec=8737  !46666 !47378 !, 26500
+        +  INTEGER, PARAMETER :: nspec=13749  !46666 !47378 !, 26500
     ```
 
     You can now recompile fsps (`cd $SPS_HOME/src; make clean; make all`) and it
