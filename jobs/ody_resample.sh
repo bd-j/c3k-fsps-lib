@@ -7,7 +7,7 @@
 #SBATCH -p conroy # Partition to submit to
 #SBATCH --mem-per-cpu=2000 # Memory per node in MB (see also --mem-per-cpu)
 #SBATCH -o logs/c3k_resample_%A_%a.log # Standard out goes to this file
-#SBATCH -e logs/c3k_reasmple_%A_%a.log # Standard err goes to this file
+#SBATCH -e logs/c3k_resample_%A_%a.log # Standard err goes to this file
 
 module purge
 module load Anaconda3/2020.11
