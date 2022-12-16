@@ -25,7 +25,7 @@ smoothed.
 Located in `output/<libname>` where `<libname>` is the name of the library.  The
 _segments_ file that specifies the resolutions is also at this location.
 
-### .h5 Files
+### *.h5 Files
 
 These are the c3k grid at the resolution indicatedThe HDF5 data are arranged in three HDF5 datasets:
 
@@ -47,17 +47,17 @@ These are the c3k grid at the resolution indicatedThe HDF5 data are arranged in 
    Note that for C3K the solar metallicity is Z=0.0134, and the solar abundances
    are from Asplund 2009.
 
-### fsps.h5 Files
+### *.fsps.h5 Files
 
 Similar to above, but the spectra have been interpolated onto the grid of
 logTeff and logg appropriate for BaSeL and FSPS.  The `parameters` dataset only
 includes `logt` and `logg`.
 
-### for_fsps directory
+### for_fsps/ directory
 
 This directory contains the files appropriate for FSPS.  All the binary spectral
-files are prefixed `c3k_alpha+0.0`.  There is also a set of *zlegend.dat and
-*.lambda files and resolution file.
+files are prefixed `c3k_alpha+0.0` by default.  There is also a set of
+*zlegend.dat and *.lambda files and resolution file.
 
 ## Implement in FSPS
 
@@ -101,15 +101,21 @@ should use the new C3K spectral library
 
 ## Implement in python-fsps
 
+
 This requires a [development install]
 (https://dfm.io/python-fsps/current/installation/#installing-development-version)
-of python-fsps. After cloning the repo, you'll need to edit
-`fsps/src/fsps/libfsps/src/sps_vars.f90` in the same way as described above.
-Then, install with the C3K library selected.  This looks like:
+of python-fsps. You need to copy the files to `$SPS_HOME` as above. Then, after
+cloning the repo, you'll need to edit `fsps/src/fsps/libfsps/src/sps_vars.f90`
+in the same way as described above. Finally, install with the C3K library selected.
+This looks like:
 
 ```sh
+cp <path/to/output/libname>/for_fsps/c3k_afe+0.0* $SPS_HOME/SPECTRA/C3K/
+cp <path/to/output/libname>/for_fsps/c3k_afe+0.0_zlegend.dat $SPS_HOME/SPECTRA/C3K/zlegend.dat
+
 git clone --recursive https://github.com/dfm/python-fsps.git
-<edit python-fsps/fsps/src/fsps/libfsps/src/sps_vars.f90>
+<change python-fsps/fsps/src/fsps/libfsps/src/sps_vars.f90>
+
 cd python-fsps
 pythn -m pip uninstall fsps
 FFLAGS="-DMILES=0 -DC3K=1" python -m pip install .

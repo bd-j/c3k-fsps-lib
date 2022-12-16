@@ -5,6 +5,7 @@
 # This resolution set was requested by Mark Dickinson for use with NIRSPEC
 # medium gratings (R~1000)
 
+# number of pixels per FWHM
 oversample:
   2
 

@@ -1,6 +1,13 @@
 # This file lists the wavelength segments and resolution of the downsampled C3K
 # library, in the format (wave_low, wave_high, R, use_fft)
 # The units are AA, AA, lambda/FWHM, boolean
+
+# This set of parameters is suitable for fitting moderate resolution stellar
+# spectra.
+
+oversample:
+  3
+
 segments:
   - [100, 1000, 250, False]
   - [1000, 24500, 10000, True]
