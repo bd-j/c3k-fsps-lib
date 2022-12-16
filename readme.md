@@ -23,8 +23,10 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    cd $SCRATCH/conroy_lab/$USER
    git clone git@github.com:bd-j/c3k-fsps-lib.git
    cd c3k-fsps-lib
+   module purge
+   module load Anaconda3/2020.11
    conda env create -f environment.yml
-   conda activate c3k
+   source activate c3k
    cd ..
    ```
 

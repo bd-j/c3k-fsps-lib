@@ -10,8 +10,7 @@
 #SBATCH -e logs/c3k_bin_%A_%a.log # Standard err goes to this file
 
 module purge
-module load gcc/7.1.0-fasrc01 openmpi/2.1.0-fasrc02 hdf5/1.10.1-fasrc01
-module load python/2.7.14-fasrc01
+module load Anaconda3/2020.11
 
 source activate c3k
 PROJECT_DIR=$SCRATCH/conroy_lab/$USER/c3k-fsps-lib
