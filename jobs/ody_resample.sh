@@ -27,4 +27,4 @@ mkdir -p $seddir
 python c3k_resample.py --zindex ${SLURM_ARRAY_TASK_ID} --ck_vers c3k_v1.3 \
                        --segment_file $segments --oversample 2 \
                        --seddir ${seddir} --sedname ${libname} --fulldir ${fulldir} \
-                       --verbose=False --nowrite 1
+                       --verbose=False --nowrite 0

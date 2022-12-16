@@ -14,7 +14,14 @@ import h5py
 from prospect.sources import StarBasis
 from utils_resample import make_seds
 from utils_fsps import get_basel_params, get_binary_spec, interpolate_to_basel
-
+from utils import get_ckc_parser
+    # key arguments are:
+    #  * --zindex
+    #  * --oversample
+    #  * --ck_vers
+    #  * --basedir
+    #  * --seddir
+    #  * --sedname
 
 __all__ = ["sed", "to_basel"]
 
@@ -133,14 +140,6 @@ if __name__ == "__main__":
                -0.75, -0.5, -0.25, 0.0, 0.25, 0.5]
     afelist = [-0.2, 0.0, +0.2, +0.4, +0.6]
 
-    from ckc.utils import get_ckc_parser
-    # key arguments are:
-    #  * --zindex
-    #  * --oversample
-    #  * --ck_vers
-    #  * --basedir
-    #  * --seddir
-    #  * --sedname
     parser = get_ckc_parser()
     parser.add_argument("--segment_file", type=str, default=None)
     parser.add_argument("--nowrite", type=int, default=0)

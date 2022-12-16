@@ -58,3 +58,59 @@ includes `logt` and `logg`.
 This directory contains the files appropriate for FSPS.  All the binary spectral
 files are prefixed `c3k_alpha+0.0`.  There is also a set of *zlegend.dat and
 *.lambda files and resolution file.
+
+## Implement in FSPS.
+
+Assuming you have downloaded FSPS, the first thing to do is copy the relevant
+files to the FSPS repo.  Note this changes version tracked files!
+```sh
+cp <path/to/output/libname>/for_fsps/c3k_afe+0.0*bin $SPS_HOME/SPECTRA/C3K/
+cp <path/to/output/libname>/for_fsps/c3k_afe+0.0_
+```
+
+You'll need to change environment variables in the ``elif (C3K)`` block; the
+values for `nzinit` and `nspec` can be obtained by `wc` on the `*.lambda` and
+`*_zlegend.dat` files, and the `spec_type` variable (and its length!) need to
+be changed to e.g. `c3k_afe+0.0`. Finally, the appropriate zlegend file
+should be copied to `zlegend.dat` (removing the prefix).  Note all the
+`*zlegend.dat` files should be equivalent.  Here's what the diff of
+`sps_vars.f90` looks like
+
+   ```f90
+   @@ 7
+   -#define MILES 1
+   +#define MILES 0
+
+   @@ 16
+   -#define C3K 0
+   +#define C3K 1
+
+    @@ 239
+    #elif (C3K)
+        REAL(SP), PARAMETER :: zsol_spec = 0.0134
+        -  CHARACTER(11), PARAMETER :: spec_type = 'c3k_afe+0.0'
+        -  INTEGER, PARAMETER :: nzinit=11
+        -  INTEGER, PARAMETER :: nspec=11149  !46666 !47378 !, 26500
+        +  CHARACTER(11), PARAMETER :: spec_type = 'c3k_afe+0.0'
+        +  INTEGER, PARAMETER :: nzinit=11
+        +  INTEGER, PARAMETER :: nspec=8737  !46666 !47378 !, 26500
+    ```
+
+    You can now recompile fsps (`cd $SPS_HOME/src; make clean; make all`) and it
+    should use the new C3K spectral library
+
+6. Implement in python-fsps
+
+   This requires a [development install]
+   (https://dfm.io/python-fsps/current/installation/#installing-development-version)
+   of python-fsps. After cloning the repo, you'll need to edit
+   `fsps/src/fsps/libfsps/src/sps_vars.f90` in the same way as described above.
+   Then, install with the C3K library selected.  This looks like:
+
+   ```sh
+   git clone --recursive https://github.com/dfm/python-fsps.git
+   <edit python-fsps/fsps/src/fsps/libfsps/src/sps_vars.f90>
+   cd python-fsps
+   pythn -m pip uninstall fsps
+   FFLAGS="-DMILES=0 -DC3K=1" python -m pip install .
+   ```

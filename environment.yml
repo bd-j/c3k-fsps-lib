@@ -2,6 +2,7 @@ name: c3k
 dependencies:
   - python=3.9
   # infrastructure
+  - pip
   - ipython
   - pyyaml
   # scientific computing
