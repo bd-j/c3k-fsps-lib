@@ -10,7 +10,7 @@
 #SBATCH -e /n/holyscratch01/conroy_lab/bdjohnson/alpjha-fsps/jobs/logs/c3k_flux_%A_%a.err # Standard err goes to this file
 
 
-source activate py2pro_env
+source activate c3k
 mkdir -p $SCRATCH/conroy_lab/$USER/run_ckc
 cd $SCRATCH/conroy_lab/$USER/alpha-fsps/src
 

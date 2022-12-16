@@ -9,10 +9,11 @@ Resolution is specified in a yml file as tuples of `(lambda_low, lambda_hi, R, u
 
 Note the c3k_v1.3 default resolutions are
 
-* 0.09micron - 0.1micron; undefined
+* 0.09micron - 0.1micron; opacity binning with wavelength spacing lambda/Delta_lambda=4500
 * 0.1micron - 2.5micron; opacity binning with wavelength spacing lambda/Delta_lambda=100000
-* 2.5micron - 40micron; undefined
+* 2.5micron - 40micron; opacity binning with wavelength spacing lambda/Delta_lambda=4500
 
+Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
 
 ## Procedure
 
@@ -40,13 +41,14 @@ Note the c3k_v1.3 default resolutions are
    interpolated to Basel logt-logg gridpoints.
 
    ```sh
+   cd jobs/
    libname=nirspec # name of the segments_<libname>.yml file
    sbatch --export=ALL,libname=${libname} --array=0-54 ody_resample.sh
    ```
 
    Note that you may wish to change the resampling here, the metallicities to
    consider, or the output filename and directory.  The output names are given
-   by `seddir` in `ody_resample.sh` and the metallicities to consider are
+   by the supplied `libname` and the metallicities to consider are
    specified in `c3k_resample.py`.  The number of jobs in the array should be
    equal to the number of feh-afe pairs (usually 11 * N_afe)
 
@@ -60,8 +62,8 @@ Note the c3k_v1.3 default resolutions are
    ```
 
    There are now several sets of binary files and ancillary files in the
-   `c3k_R3k/for_fsps/` directory (by default) that can be moved to the
-   ```$SPS_HOME/SPECTRA/CKC14``` directory.  By altering `sps_vars.f90` you can
+   `output/${libname}/for_fsps/` directory (by default) that can be moved to the
+   ```$SPS_HOME/SPECTRA/C3K``` directory.  By altering `sps_vars.f90` you can
    choose to use these spectra.
 
 5. Implement in FSPS.  You'll need to change environment variables in the
