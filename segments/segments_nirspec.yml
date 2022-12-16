@@ -3,17 +3,17 @@
 # The units are AA, AA, lambda/FWHM, boolean
 
 # This resolution set was requested by Mark Dickinson for use with NIRSPEC
-# medium gratings (R~1000)
+# medium gratings (R~1000-2000)
 
 # number of pixels per FWHM
 oversample:
   2
 
 segments:
-  - [100, 1000, 250, False]
-  - [1000, 3000, 1000, False]
-  - [3000, 20000, 2000, True]
-  - [20000, 24999, 2000, False]
+  - [100, 1000, 200, False]
+  - [1000, 3500, 1000, False]
+  - [3500, 20000, 1500, True]
+  - [20000, 24999, 1500, False]
   - [25000, 50000, 1000, True]
   - [50000, 10000000, 50, True]
 

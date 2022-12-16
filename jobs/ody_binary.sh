@@ -30,4 +30,4 @@ python c3k_binary.py --zindex=${SLURM_ARRAY_TASK_ID} --ck_vers=c3k_v1.3 \
                      --seddir=${seddir} --sedname=${libname} --outdir=${outdir}
 
 wc ${outdir}/*.lambda
-wc ${outdir}/*.zlegend.dat
+wc ${outdir}/*_zlegend.dat
