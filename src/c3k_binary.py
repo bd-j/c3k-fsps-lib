@@ -16,6 +16,7 @@ import h5py
 from argparse import Namespace
 
 from utils import get_ckc_parser, sed_to_bin
+import constants
 
 __all__ = ["prep_for_fsps"]
 
@@ -44,17 +45,25 @@ def prep_for_fsps(fehlist=[-0.75, -0.5, -0.25, 0.0, 0.25],
         sed_to_bin(sedfile, outname)
     zlegend.close()
     # Now make the wavelength file
-    with h5py.File(sedfile, "r") as f:
+    with h5py.File(sedfile.replace(".fsps.", "."), "r") as f:
         wave = np.array(f["wavelengths"])
+        res = f["resolution"][:]
+        vres = constants.ckms / res / constants.sigma_to_fwhm
+        indef = (wave < 1e3) | (wave > 2.5e4)
+        vres[indef] = -1 * vres[indef]
     with open(lambda_name.format(args.outdir, args.prefix), "w") as wavefile:
         for w in wave:
             wavefile.write("{}\n".format(w))
+    with open(rname.format(args.outdir, args.prefix), "w") as resfile:
+        for vr in vres:
+            resfile.write("{}\n".format(vr))
 
 
 if __name__ == "__main__":
 
     parser = get_ckc_parser()
     parser.add_argument("--outdir", type=str, default="")
+    parser.add_argument("--test", type=int, default=0)
 
     args = parser.parse_args()
 
@@ -63,6 +72,8 @@ if __name__ == "__main__":
                -0.75, -0.5, -0.25, 0.0, 0.25, 0.5]
 
     afe = afelist[args.zindex]
+    if args.test:
+        fehlist = [0.0]
 
     # should start with c3k or sps_setup.f90 needs to change
     args.prefix = "c3k_afe{:+2.1f}".format(afe)

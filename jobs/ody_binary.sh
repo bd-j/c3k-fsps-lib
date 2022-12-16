@@ -3,7 +3,7 @@
 #SBATCH -J c3k_fs_bin
 #SBATCH -n 1 # Number of cores requested
 #SBATCH -N 1 # Ensure that all cores are on one machine
-#SBATCH -t 6:00:00 # Runtime
+#SBATCH -t 00:30:00 # Runtime
 #SBATCH -p conroy # Partition to submit to
 #SBATCH --mem-per-cpu=2000 # Memory per node in MB (see also --mem-per-cpu)
 #SBATCH -o /n/holyscratch01/conroy_lab/bdjohnson/alpha-fsps/jobs/logs/c3k_R3k_bin_%A_%a.out # Standard out goes to this file
@@ -25,7 +25,10 @@ mkdir -p $outdir
 
 # Note there are 5 afes
 #ii=( 0 1 2 3 4 )
+# solar is ii=1
 
 python c3k_binary.py --zindex=${SLURM_ARRAY_TASK_ID} --ck_vers=c3k_v1.3 \
-                     --seddir=${seddir} --sedname=${seddir} --outdir=${outdir}
+                     --seddir=${seddir} --sedname=${libname} --outdir=${outdir}
 
+wc ${outdir}/*.lambda
+wc ${outdir}/*.zlegend.dat

@@ -11,6 +11,9 @@ mkdir -p $outdir
 ii=( 1 )
 for i in "${ii[@]}";
   do
-    python c3k_binary.py --zindex=$i --ck_vers=c3k_v1.3 \
-                         --seddir=${seddir} --sedname=${seddir} --outdir=${outdir}
+    python c3k_binary.py --zindex=$i --ck_vers=c3k_v1.3 --test 1 \
+                         --seddir=${seddir} --sedname=${libname} --outdir=${outdir}
 done
+
+wc ../output/${libname}/for_fsps/*.lambda
+wc ../output/${libname}/for_fsps/*.zlegend.dat

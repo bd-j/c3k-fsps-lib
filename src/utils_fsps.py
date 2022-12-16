@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Module for converting single metallicity SED files in HDF format to the
-parameters and binary format expected by fsps
+BaSeL parameter grid expected by fsps.  Lots of interpolation.
 """
 
 import os
@@ -10,6 +10,7 @@ from itertools import product
 import numpy as np
 import h5py
 
+from utils import read_binary_spec
 from prospect.sources import StarBasis
 
 __all__ = ["get_basel_params", "get_binary_spec", "interpolate_to_basel"]
@@ -41,7 +42,6 @@ def get_binary_spec(ngrid, zstr="0.0200", speclib="BaSeL3.1/basel"):
     """
     :param zstr: for basel "0.0002", "0.0006", "0.0020", "0.0063", "0.0200", "0.0632"
     """
-    from .utils import read_binary_spec
     specname = "{}/SPECTRA/{}".format(os.environ["SPS_HOME"], speclib)
     wave = np.genfromtxt("{}.lambda".format(specname))
     try:
@@ -240,7 +240,7 @@ def extremeg(interpolator, pars):
 def show_coverage(basel_pars, libparams, inds):
     false = np.zeros(len(basel_pars), dtype=bool)
     o, i, e = inds
-    out, interp, extreme = false.copy(), false.copy(), false.copy() 
+    out, interp, extreme = false.copy(), false.copy(), false.copy()
     out[o] = True
     interp[i] = True
     extreme[e] = True
@@ -264,61 +264,3 @@ def show_coverage(basel_pars, libparams, inds):
     #ax.legend(loc=0)
 
     return fig, ax
-
-
-if __name__ == "__main__":
-
-    from .utils import get_ckc_parser
-    # key arguments are:
-    #  * --feh
-    #  * --afe
-    #  * --ck_vers
-    #  * --basedir
-    #  * --sedname
-    parser = get_ckc_parser()
-    args = parser.parse_args()
-    parser.add_argument("--outname", type=str, default="fsps",
-                        help=("Full name and path to the output fsps HDF5 file."))
-    parser.add_argument("--zsol", type=float, default=0.0134,
-                        help=("Definition of solar metallicity"))
-    parser.add_argument("--renorm", type=bool, default=False,
-                        help=("Whether to renormalize fluxes to the existing file."))
-    parser.add_argument("--show_coverage", type=bool, default=False,
-                        help=("Whether to make a coverage figure."))
-
-    args = parser.parse_args()
-
-    # --- Filenames ---
-    z = args.zsol * 10**args.feh
-    zstr = "{:1.4f}".format(z)
-
-    template = "{}/{}_feh{:+3.2f}_afe{:+2.1f}.{}.h5"
-    sedfile = template.format(args.basedir, args.ck_vers, args.feh, args.afe, args.sedname)
-    outname = template.format(args.basedir, args.ck_vers, args.feh, args.afe, args.outname)
-
-    metname = "feh{:+3.2f}_afe{:+2.1f}".format(args.feh, args.afe)
-
-    # --- Charlie's interpolation ---
-    basel_pars = get_basel_params()
-    cwave, cspec, valid = get_binary_spec(len(basel_pars), zstr=zstr,
-                                          speclib='CKC14/ckc14')
-
-    # --- My interpolator ---
-    interpolator = StarBasis(sedfile, use_params=['logg', 'logt'], logify_Z=False,
-                             n_neighbors=1, verbose=False, rescale_libparams=True)
-
-    # --- Do the interpolation ---
-    bwave, bspec, inds = interpolate_to_basel([basel_pars, cwave, cspec], interpolator,
-                                              valid=valid, renorm=args.renorm,
-                                              plot=None)
-
-    # --- Write the output ---
-    with h5py.File(outname, "w") as f:
-        f.create_dataset("parameters", data=basel_pars)
-        f.create_dataset("spectra", data=bspec)
-
-
-    if args.show_coverage:
-        fig, ax = show_coverage(basel_pars, interpolator._libparams, inds)
-        ax.legend(loc=0)
-        fig.savefig("coverage_{}.pdf".format(metname))
