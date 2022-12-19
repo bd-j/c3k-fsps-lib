@@ -68,17 +68,25 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    ```$SPS_HOME/SPECTRA/C3K``` directory.  By altering `sps_vars.f90` you can
    choose to use these spectra.
 
-5. Implement in FSPS.
+5. Implement in FSPS
 
-   You'll need to change environment variables in the ``elif (C3K)`` block; the
-   values for `nzinit` and `nspec` can be obtained by `wc` on the `*.lambda` and
-   `*_zlegend.dat` files, and the `spec_type` variable (and its length!) need to
-   be changed to e.g. `c3k_afe+0.0`. Finally, the appropriate zlegend file
-   should be copied to `zlegend.dat` (removing the prefix).  Note all the
-   `*zlegend.dat` files should be equivalent.  Here's what the diff of
-   `sps_vars.f90` looks like
+   Assuming you have downloaded FSPS, the first thing to do is copy the relevant
+   files to the FSPS repo.  Note this changes version tracked files!  In principle
+   you could change the prefix, but that's more complicated.
+   ```sh
+   cp <path/to/output/libname>/for_fsps/c3k_afe+0.0* $SPS_HOME/SPECTRA/C3K/
+   cp <path/to/output/libname>/for_fsps/c3k_afe+0.0_zlegend.dat $SPS_HOME/SPECTRA/C3K/zlegend.dat
+   ```
 
-   ```f90
+   Then, you need to change the `sps_vars.f90` code.  You'll want to specify the
+   the C3K library using the precompiler directives, and you'll need to change
+   environment variables in the ``elif (C3K)`` block; the values for `nzinit`
+   and `nspec` can be obtained by `wc` on the `*.lambda` and `*_zlegend.dat`
+   files, and the `spec_type` variable (and its length!) could be changed to
+   e.g. `c3k_ns_afe+0.0`. Here's what the diff of `sps_vars.f90` looks like with
+   nz=11 and nspec=13749 and no change to the prefix:
+
+   ```diff
    @@ 7
    -#define MILES 1
    +#define MILES 0
@@ -87,31 +95,51 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    -#define C3K 0
    +#define C3K 1
 
-    @@ 239
-    #elif (C3K)
-        REAL(SP), PARAMETER :: zsol_spec = 0.0134
-        -  CHARACTER(11), PARAMETER :: spec_type = 'c3k_afe+0.0'
-        -  INTEGER, PARAMETER :: nzinit=11
-        -  INTEGER, PARAMETER :: nspec=11149  !46666 !47378 !, 26500
-        +  CHARACTER(11), PARAMETER :: spec_type = 'c3k_afe+0.0'
-        +  INTEGER, PARAMETER :: nzinit=11
-        +  INTEGER, PARAMETER :: nspec=13749  !46666 !47378 !, 26500
-    ```
+      @@ 239
+      #elif (C3K)
+         REAL(SP), PARAMETER :: zsol_spec = 0.0134
+   -        CHARACTER(11), PARAMETER :: spec_type = 'c3k_afe+0.0'
+   -        INTEGER, PARAMETER :: nzinit=11
+   -        INTEGER, PARAMETER :: nspec=11149  !46666 !47378 !, 26500
+   +        CHARACTER(11), PARAMETER :: spec_type = 'c3k_afe+0.0'
+   +        INTEGER, PARAMETER :: nzinit=11
+   +        INTEGER, PARAMETER :: nspec=13749  !46666 !47378 !, 26500
+   ```
 
-    You can now recompile fsps (`cd $SPS_HOME/src; make clean; make all`) and it
-    should use the new C3K spectral library
+   You can now recompile fsps (`cd $SPS_HOME/src; make clean; make all`) and it
+   should use the new C3K spectral library
 
 6. Implement in python-fsps
 
+
    This requires a [development install]
    (https://dfm.io/python-fsps/current/installation/#installing-development-version)
-   of python-fsps. After cloning the repo, you'll need to edit
-   `fsps/src/fsps/libfsps/src/sps_vars.f90` in the same way as described above.
-   Then, install with the C3K library selected.  This looks like:
+   of python-fsps. You need to copy the files to `$SPS_HOME` as above. Then, after
+   cloning the repo, you'll need to edit `fsps/src/fsps/libfsps/src/sps_vars.f90`
+   in the same way as described above. Finally, install with the C3K library selected.
+   This looks like:
 
    ```sh
+   cp <path/to/output/libname>/for_fsps/c3k_afe+0.0* $SPS_HOME/SPECTRA/C3K/
+   cp <path/to/output/libname>/for_fsps/c3k_afe+0.0_zlegend.dat $SPS_HOME/SPECTRA/C3K/zlegend.dat
+
    git clone --recursive https://github.com/dfm/python-fsps.git
-   <edit python-fsps/fsps/src/fsps/libfsps/src/sps_vars.f90>
+   <change python-fsps/fsps/src/fsps/libfsps/src/sps_vars.f90 as in step 5>
+
    cd python-fsps
+   python -m pip uninstall fsps
    FFLAGS="-DMILES=0 -DC3K=1" python -m pip install .
+   ```
+
+7. Test python-fsps implementation
+
+   You can test that this worked by running a script in the test/ directory and
+   looking at the output.  (Make sure to do this the environment where you
+   installed python-fsps above) . This may take some time, as the SSPs are
+   regenerated several times.
+
+   ```sh
+   cd c3k-fsps/lib/tests
+   python fsps_feature_demo.py
+   open features.pdf
    ```

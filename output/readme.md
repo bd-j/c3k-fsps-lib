@@ -69,12 +69,13 @@ cp <path/to/output/libname>/for_fsps/c3k_afe+0.0* $SPS_HOME/SPECTRA/C3K/
 cp <path/to/output/libname>/for_fsps/c3k_afe+0.0_zlegend.dat $SPS_HOME/SPECTRA/C3K/zlegend.dat
 ```
 
-You'll need to change environment variables in the ``elif (C3K)`` block; the
-values for `nzinit` and `nspec` can be obtained by `wc` on the `*.lambda` and
-`*_zlegend.dat` files, and the `spec_type` variable (and its length!) could be
-changed to e.g. `c3k_ns_afe+0.0`. Finally, the appropriate zlegend file should
-be copied to `zlegend.dat` (removing the prefix).  Here's what the diff of
-`sps_vars.f90` looks like with nz=11 and nspec=13749 and no change to the prefix:
+Then, you need to change the `sps_vars.f90` code.  You'll want to specify the
+the C3K library using the precompiler directives, and you'll need to change
+environment variables in the ``elif (C3K)`` block; the values for `nzinit` and
+`nspec` can be obtained by `wc` on the `*.lambda` and `*_zlegend.dat` files, and
+the `spec_type` variable (and its length!) could be changed to e.g.
+`c3k_ns_afe+0.0`. Here's what the diff of `sps_vars.f90` looks like with nz=11
+and nspec=11244 and no change to the prefix:
 
 ```diff
 @@ 7
@@ -93,7 +94,7 @@ be copied to `zlegend.dat` (removing the prefix).  Here's what the diff of
 -        INTEGER, PARAMETER :: nspec=11149  !46666 !47378 !, 26500
 +        CHARACTER(11), PARAMETER :: spec_type = 'c3k_afe+0.0'
 +        INTEGER, PARAMETER :: nzinit=11
-+        INTEGER, PARAMETER :: nspec=13749  !46666 !47378 !, 26500
++        INTEGER, PARAMETER :: nspec=11244  !46666 !47378 !, 26500
    ```
 
 You can now recompile fsps (`cd $SPS_HOME/src; make clean; make all`) and it
@@ -114,9 +115,9 @@ cp <path/to/output/libname>/for_fsps/c3k_afe+0.0* $SPS_HOME/SPECTRA/C3K/
 cp <path/to/output/libname>/for_fsps/c3k_afe+0.0_zlegend.dat $SPS_HOME/SPECTRA/C3K/zlegend.dat
 
 git clone --recursive https://github.com/dfm/python-fsps.git
-<change python-fsps/fsps/src/fsps/libfsps/src/sps_vars.f90>
+<change python-fsps/fsps/src/fsps/libfsps/src/sps_vars.f90 as in step 5>
 
 cd python-fsps
-pythn -m pip uninstall fsps
+python -m pip uninstall fsps
 FFLAGS="-DMILES=0 -DC3K=1" python -m pip install .
 ```
