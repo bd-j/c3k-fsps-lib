@@ -10,6 +10,8 @@ from itertools import product
 import numpy as np
 import h5py
 
+from scipy import interpolate
+
 from utils import read_binary_spec
 from prospect.sources import StarBasis
 
@@ -44,28 +46,82 @@ def get_kiel_grid(basel=False):
     return kiel_params
 
 
-def rectify_sed(sedfile):
+def rectify_sed(sedfile, rectified):
     """Do all the crazy magic to get models that are better for interpolating
     to BaSeL params.  Necessary?
     """
     with h5py.File(sedfile, "r") as sed:
+        assert "extended" not in sed
         params = np.array(sed["parameters"])
         spec = np.array(sed["spectra"])
         wave = np.array(sed["wavelengths"])
+        res = np.array(sed["resolution"])
+        attrs = dict(sed.attrs)
 
-    # Adjust temperatures
-    for t in [37000., 42000., 47000.]:
-        this = 10**params["logt"] == t
-        params[this]["logt"] = np.log10(t)
+    tgrid = np.sort(np.unique(params["logt"]))
+    ggrid = np.sort(np.unique(params["logg"]))
 
-    # Copy logg
-    sel = params["logg"] == -0.50
-    params[sel]["logg"] = -0.51
-    newpars = np.zeros(sel.sum, dtype=params.dtype)
+    fudged = np.zeros(len(params))
+
+    # --- fudge some spectra ---
+    new_pars, new_spec = [], []
+
+    # at each logt copy lowest logg to the two lower loggs
+    for logt in tgrid:
+        this = params["logt"] == logt
+        gmin = np.min(params[this]["logg"])
+        ind = (params["logt"] == logt) & (params["logg"] == gmin)
+        for newg in [gmin - 0.5, gmin-1.0]:
+            if newg >= ggrid.min():
+                newp = np.array(params[ind])
+                newp["logg"] = newg
+                news = spec[ind]
+                new_pars.append(newp)
+                new_spec.append(news)
+
+    # at lowest and second lowest logt, interpolate across holes in logg
+    for logt in tgrid[:2]:
+        this = params["logt"] == logt
+        x = params[this]["logg"]
+        y = spec[this, :]
+        newg = [logg for logg in ggrid if
+                (logg > x.min()) & (logg < x.max()) and (logg not in x)]
+        if len(newg) == 0:
+            continue
+
+        newg = np.array(newg)
+        f = interpolate.interp1d(x, y, axis=0, kind="linear")
+        news = f(newg)
+        newp = np.tile(params[this][0], len(newg))
+        newp["logg"] = newg
+        new_pars.append(newp)
+        new_spec.append(news)
+
+    new_pars = np.concatenate(new_pars)
+    new_spec = np.concatenate(new_spec)
+
+    # concatenate the new models to the old ones
+    params = np.concatenate([params, new_pars])
+    spec = np.concatenate([spec, new_spec])
+    fudged = np.concatenate([fudged, np.ones(len(new_pars))])
+
+    # write output to a file
+    with h5py.File(rectified, "x") as sed:
+        sed.create_dataset("extended", data=fudged)
+        if "wavelengths" not in sed:
+            sed.create_dataset("wavelengths", data=wave)
+        if "resolution" not in sed:
+            sed.create_dataset("resolution", data=res)
+        #if "parameters" in sed:
+        #    del sed["parameters"]
+        sed.create_dataset("parameters", data=params)
+        #if "spectra" in sed:
+        #    del sed["spectra"]
+        sed.create_dataset("spectra", data=spec)
+        sed.attrs.update(attrs)
 
 
-def interpolate_to_grid(grid_pars, interpolator, valid=True, plot=None,
-                        renorm=False, verbose=True):
+def interpolate_to_grid(grid_pars, interpolator, valid=True, verbose=True):
 
     bwave = interpolator.wavelengths
     allspec = []
