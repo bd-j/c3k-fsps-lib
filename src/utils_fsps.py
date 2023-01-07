@@ -94,22 +94,14 @@ def rectify_sed(sedfile):
     newpars = np.zeros(sel.sum, dtype=params.dtype)
 
 
-def interpolate_to_grid(grid_info, interpolator, valid=True, plot=None,
+def interpolate_to_grid(grid_pars, interpolator, valid=True, plot=None,
                         renorm=False, verbose=True):
 
     bwave = interpolator.wavelengths
-    if plot is not None:
-        import matplotlib.pyplot as pl
-        from matplotlib.backends.backend_pdf import PdfPages
-        out_pdf = PdfPages('out'+plot)
-        in_pdf = PdfPages('in'+plot)
-        ex_pdf = PdfPages('ex'+plot)
-    grid_pars, cwave, cspec = grid_info
     allspec = []
     outside, inside, extreme = [], [], []
 
     for i, (p, v) in enumerate(zip(grid_pars, valid)):
-        title = "target: {logt:4.3f}, {logg:3.2f}".format(**dict_struct(p))
         inds, wghts = interpolator.weights(**dict_struct(p))
         ex_g = extremeg(interpolator, p)
         if verbose:
@@ -118,44 +110,15 @@ def interpolate_to_grid(grid_info, interpolator, valid=True, plot=None,
             inds, wghts = nearest_tg(interpolator, p)
 
         # valid *and* (in-hull and non-extreme g)
-        # could use `or` except for normalization - need a valid sample.
         if (v and (len(inds) > 1)):
             _, bspec, _ = interpolator.get_star_spectrum(**dict_struct(p))
-            if renorm:
-                norm, bspec = renorm([bwave, bspec], [cwave, cspec[i,:]])
-            if (wghts.max() < 1.0) & (plot is not None):
-                fig, ax = plot_interp(cwave, cspec[i,:], bspec, inds, wghts, interpolator)
-                ax.set_title(title + ", norm={:4.3f}".format(norm))
-                ax.legend()
-                inside.append(i)
-                in_pdf.savefig(fig)
-                pl.close(fig)
-
         # valid *and* (out-hull or extremeg)
         elif (v and (len(inds) == 1)):
             bspec = interpolator._spectra[inds, :]
-            if renorm:
-                norm, bspec = renorm([bwave, bspec], [cwave, cspec[i,:]])
-            if plot is not None:
-                fig, ax = plot_interp(cwave, cspec[i,:], bspec, inds, wghts, interpolator)
-                ax.set_title(title + ", norm={:4.3f}".format(norm))
-                ax.legend()
-                if ex_g:
-                    extreme.append(i)
-                    ex_pdf.savefig(fig)
-                else:
-                    outside.append(i)
-                    out_pdf.savefig(fig)
-                pl.close(fig)
         # not valid
         else:
             bspec = np.zeros_like(interpolator.wavelengths) + 1e-33
         allspec.append(np.squeeze(bspec))
-
-    if plot is not None:
-        out_pdf.close()
-        in_pdf.close()
-        ex_pdf.close()
 
     return interpolator.wavelengths, np.array(allspec), [outside, inside, extreme]
 
@@ -243,7 +206,7 @@ def extremeg(interpolator, pars):
     return (pars["logg"] < ggrid.min()) or (pars["logg"] > ggrid.max())
 
 
-def show_coverage(grid_pars, libparams, inds):
+def show_coverage(grid_pars, libparams, inds, valid):
     false = np.zeros(len(grid_pars), dtype=bool)
     o, i, e = inds
     out, interp, extreme = false.copy(), false.copy(), false.copy()

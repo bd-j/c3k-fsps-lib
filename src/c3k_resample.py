@@ -13,7 +13,7 @@ import h5py
 
 from prospect.sources import StarBasis
 from utils_resample import make_seds
-from utils_fsps import get_kiel_grid, interpolate_to_grid
+from utils_fsps import get_kiel_grid, interpolate_to_grid, get_binary_spec
 from utils import get_ckc_parser
     # key arguments are:
     #  * --zindex
@@ -90,6 +90,8 @@ def to_grid(feh, afe, sedfile, args):
         Must have the attributes
         * seddir - output location
         * sedname - add this label to the output filenames
+        * use_basel_grid - whether to use the basel logt-logg grid or the one
+                           given in ../data/log*.dat
         * nowrite - whether to write the output to HDF5 or return the
                     interpolated spectra
     """
@@ -98,10 +100,11 @@ def to_grid(feh, afe, sedfile, args):
     outname = template.format(args.seddir, args.ck_vers, feh, afe, args.sedname)
 
     # Grid Params and valid z=0.0200 spectra
-    grid_pars = get_kiel_grid()
+    grid_pars = get_kiel_grid(basel=args.use_basel_grid)
     valid = np.ones(len(grid_pars), dtype=bool)
-    #cwave, cspec, valid = get_binary_spec(len(grid_pars), zstr="0.0200",
-    #                                      speclib='BaSeL3.1/basel')
+    if args.use_basel_grid:
+        _, _, valid = get_binary_spec(len(grid_pars), zstr="0.0200",
+                                      speclib='BaSeL3.1/basel')
 
     # My interpolator
     interpolator = StarBasis(sedfile, use_params=['logg', 'logt'], logify_Z=False,
@@ -109,8 +112,7 @@ def to_grid(feh, afe, sedfile, args):
                              rescale_libparams=True)
 
     # Do the interpolation
-    bwave, bspec, inds = interpolate_to_grid([grid_pars, cwave, cspec], interpolator,
-                                             valid=valid, renorm=False, plot=None,
+    bwave, bspec, inds = interpolate_to_grid(grid_pars, interpolator, valid=valid,
                                              verbose=args.verbose)
     # Keep track of how interpolation was done
     false = np.zeros(len(grid_pars), dtype=bool)
@@ -144,6 +146,7 @@ if __name__ == "__main__":
 
     parser = get_ckc_parser()
     parser.add_argument("--segment_file", type=str, default=None)
+    parser.add_argument("--use_basel_grid", type=int, default=False)
     parser.add_argument("--nowrite", type=int, default=0)
     args = parser.parse_args()
 
