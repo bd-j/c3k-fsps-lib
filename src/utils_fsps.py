@@ -13,7 +13,7 @@ import h5py
 from utils import read_binary_spec
 from prospect.sources import StarBasis
 
-__all__ = ["get_basel_params", "get_binary_spec", "interpolate_to_basel"]
+__all__ = ["get_kiel_grid", "get_binary_spec", "interpolate_to_basel"]
 
 
 def dict_struct(strct):
@@ -23,19 +23,25 @@ def dict_struct(strct):
     return dict([(n, strct[n]) for n in strct.dtype.names])
 
 
-def get_basel_params():
-    """Get the BaSeL grid parameters as a 1-d list of parameter tuples.  The
+def get_kiel_grid(basel=False):
+    """Get the logt-logg grid parameters as a 1-d list of parameter tuples.  The
     binary files are written in the order logg, logt, wave with wave changing
     fastest and logg the slowest.
     """
-    fsps_dir = os.path.join(os.environ["SPS_HOME"], "SPECTRA", "BaSeL3.1")
-    logg = np.genfromtxt("{}/basel_logg.dat".format(fsps_dir))
-    logt = np.genfromtxt("{}/basel_logt.dat".format(fsps_dir))
+    if basel:
+        dirn = os.path.join(os.environ["SPS_HOME"], "SPECTRA", "BaSeL3.1")
+        pre = "basel_"
+    else:
+        dirn = "../data"
+        pre = ""
+
+    logg = np.genfromtxt(f"{dirn}/{pre}logg.dat")
+    logt = np.genfromtxt(f"{dirn}/{pre}logt.dat")
     logt = np.log10(np.round(10**logt))
     ngrid = len(logg) * len(logt)
     dt = np.dtype([('logg', np.float), ('logt', np.float)])
-    basel_params = np.array(list(product(logg, logt)), dtype=dt)
-    return basel_params
+    kiel_params = np.array(list(product(logg, logt)), dtype=dt)
+    return kiel_params
 
 
 def get_binary_spec(ngrid, zstr="0.0200", speclib="BaSeL3.1/basel"):
@@ -88,8 +94,8 @@ def rectify_sed(sedfile):
     newpars = np.zeros(sel.sum, dtype=params.dtype)
 
 
-def interpolate_to_basel(charlie, interpolator, valid=True, plot=None,
-                         renorm=False, verbose=True):
+def interpolate_to_grid(grid_info, interpolator, valid=True, plot=None,
+                        renorm=False, verbose=True):
 
     bwave = interpolator.wavelengths
     if plot is not None:
@@ -98,11 +104,11 @@ def interpolate_to_basel(charlie, interpolator, valid=True, plot=None,
         out_pdf = PdfPages('out'+plot)
         in_pdf = PdfPages('in'+plot)
         ex_pdf = PdfPages('ex'+plot)
-    basel_pars, cwave, cspec = charlie
+    grid_pars, cwave, cspec = grid_info
     allspec = []
     outside, inside, extreme = [], [], []
 
-    for i, (p, v) in enumerate(zip(basel_pars, valid)):
+    for i, (p, v) in enumerate(zip(grid_pars, valid)):
         title = "target: {logt:4.3f}, {logg:3.2f}".format(**dict_struct(p))
         inds, wghts = interpolator.weights(**dict_struct(p))
         ex_g = extremeg(interpolator, p)
@@ -237,8 +243,8 @@ def extremeg(interpolator, pars):
     return (pars["logg"] < ggrid.min()) or (pars["logg"] > ggrid.max())
 
 
-def show_coverage(basel_pars, libparams, inds):
-    false = np.zeros(len(basel_pars), dtype=bool)
+def show_coverage(grid_pars, libparams, inds):
+    false = np.zeros(len(grid_pars), dtype=bool)
     o, i, e = inds
     out, interp, extreme = false.copy(), false.copy(), false.copy()
     out[o] = True
@@ -248,17 +254,17 @@ def show_coverage(basel_pars, libparams, inds):
 
     import matplotlib.pyplot as pl
     fig, ax = pl.subplots()
-    ax.plot(basel_pars["logt"], basel_pars["logg"], 'o', alpha=0.2,
+    ax.plot(grid_pars["logt"], grid_pars["logg"], 'o', alpha=0.2,
             label="BaSeL grid")
-    ax.plot(basel_pars["logt"][exact], basel_pars["logg"][exact], 'o',
+    ax.plot(grid_pars["logt"][exact], grid_pars["logg"][exact], 'o',
             label="exact")
-    ax.plot(basel_pars["logt"][out], basel_pars["logg"][out], 'o',
+    ax.plot(grid_pars["logt"][out], grid_pars["logg"][out], 'o',
             label="outside C3K")
-    ax.plot(basel_pars["logt"][interp], basel_pars["logg"][interp], 'o',
+    ax.plot(grid_pars["logt"][interp], grid_pars["logg"][interp], 'o',
             label="interpolated")
-    ax.plot(basel_pars["logt"][extreme], basel_pars["logg"][extreme], 'o',
+    ax.plot(grid_pars["logt"][extreme], grid_pars["logg"][extreme], 'o',
             label="nearest (t, g)")
-    ax.plot(libparams["logt"], libparams["logg"], 'ko', alpha=0.3, label="C3K") 
+    ax.plot(libparams["logt"], libparams["logg"], 'ko', alpha=0.3, label="C3K")
     ax.invert_yaxis()
     ax.invert_xaxis()
     #ax.legend(loc=0)

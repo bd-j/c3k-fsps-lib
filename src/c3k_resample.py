@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Use the full resolution c3k library to produce smoothed interpolated on to
-the basel grid for fsps.
+the logt-logg grid for fsps.
 """
 
 import sys, shutil
@@ -13,7 +13,7 @@ import h5py
 
 from prospect.sources import StarBasis
 from utils_resample import make_seds
-from utils_fsps import get_basel_params, get_binary_spec, interpolate_to_basel
+from utils_fsps import get_kiel_grid, interpolate_to_grid
 from utils import get_ckc_parser
     # key arguments are:
     #  * --zindex
@@ -23,7 +23,7 @@ from utils import get_ckc_parser
     #  * --seddir
     #  * --sedname
 
-__all__ = ["sed", "to_basel"]
+__all__ = ["sed", "to_grid"]
 
 
 def sed(feh, afe, segments, args):
@@ -71,8 +71,8 @@ def sed(feh, afe, segments, args):
     return outname
 
 
-def to_basel(feh, afe, sedfile, args):
-    """Interpolate spectrally resampled spectra onto the BaSeL logt-logg grid,
+def to_grid(feh, afe, sedfile, args):
+    """Interpolate spectrally resampled spectra onto the logt-logg grid,
     and write to a new HDF5 file with extension `.fsps.h5`
 
     Parameters
@@ -97,21 +97,23 @@ def to_basel(feh, afe, sedfile, args):
     template = "{}/{}_feh{:+3.2f}_afe{:+2.1f}.{}.fsps.h5"
     outname = template.format(args.seddir, args.ck_vers, feh, afe, args.sedname)
 
-    # Basel Params and valid z=0.0200 spectra
-    basel_pars = get_basel_params()
-    cwave, cspec, valid = get_binary_spec(len(basel_pars), zstr="0.0200",
-                                          speclib='BaSeL3.1/basel')
+    # Grid Params and valid z=0.0200 spectra
+    grid_pars = get_kiel_grid()
+    valid = np.ones(len(grid_pars), dtype=bool)
+    #cwave, cspec, valid = get_binary_spec(len(grid_pars), zstr="0.0200",
+    #                                      speclib='BaSeL3.1/basel')
+
     # My interpolator
     interpolator = StarBasis(sedfile, use_params=['logg', 'logt'], logify_Z=False,
                              n_neighbors=1, verbose=args.verbose,
                              rescale_libparams=True)
 
     # Do the interpolation
-    bwave, bspec, inds = interpolate_to_basel([basel_pars, cwave, cspec], interpolator,
-                                              valid=valid, renorm=False, plot=None,
-                                              verbose=args.verbose)
+    bwave, bspec, inds = interpolate_to_grid([grid_pars, cwave, cspec], interpolator,
+                                             valid=valid, renorm=False, plot=None,
+                                             verbose=args.verbose)
     # Keep track of how interpolation was done
-    false = np.zeros(len(basel_pars), dtype=bool)
+    false = np.zeros(len(grid_pars), dtype=bool)
     o, i, e = inds
     out, interp, extreme = false.copy(), false.copy(), false.copy()
     out[o] = True
@@ -120,10 +122,10 @@ def to_basel(feh, afe, sedfile, args):
     exact = (valid & (~out) & (~interp) & (~extreme))
 
     if args.nowrite:
-        return basel_pars, bwave, bspec, inds
+        return grid_pars, bwave, bspec, inds
     # Write the output
     with h5py.File(outname, "w") as f:
-        f.create_dataset("parameters", data=basel_pars)
+        f.create_dataset("parameters", data=grid_pars)
         f.create_dataset("spectra", data=bspec)
         f.create_dataset("wavelengths", data=interpolator.wavelengths)
         idat = f.create_group("interpolation_info")
@@ -182,12 +184,12 @@ if __name__ == "__main__":
     # --- make the sed file ---
     sedfile = sed(feh, afe, segments, args)
 
-    # --- Make the SED interpolated to basel logt, logg grid ---
+    # --- Make the SED interpolated to FSPS logt, logg grid ---
     if args.nowrite:
         sys.exit()
     if "sedfile" not in locals():
         template = "{}/{}_feh{:+3.2f}_afe{:+2.1f}.{}.h5"
         sedfile = template.format(args.seddir, args.ck_vers, feh, afe, args.sedname)
-    out = to_basel(feh, afe, sedfile, args)
+    out = to_grid(feh, afe, sedfile, args)
     if args.nowrite:
-        basel_pars, bwave, bspec, inds = out
+        grid_pars, bwave, bspec, inds = out
