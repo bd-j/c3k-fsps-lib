@@ -13,7 +13,7 @@ import h5py
 from utils import read_binary_spec
 from prospect.sources import StarBasis
 
-__all__ = ["get_kiel_grid", "get_binary_spec", "interpolate_to_basel"]
+__all__ = ["get_kiel_grid", "get_binary_spec", "interpolate_to_grid"]
 
 
 def dict_struct(strct):
@@ -42,36 +42,6 @@ def get_kiel_grid(basel=False):
     dt = np.dtype([('logg', np.float), ('logt', np.float)])
     kiel_params = np.array(list(product(logg, logt)), dtype=dt)
     return kiel_params
-
-
-def get_binary_spec(ngrid, zstr="0.0200", speclib="BaSeL3.1/basel"):
-    """
-    :param zstr: for basel "0.0002", "0.0006", "0.0020", "0.0063", "0.0200", "0.0632"
-    """
-    specname = "{}/SPECTRA/{}".format(os.environ["SPS_HOME"], speclib)
-    wave = np.genfromtxt("{}.lambda".format(specname))
-    try:
-        ss = read_binary_spec("{}_wlbc_z{}.spectra.bin".format(specname, zstr), len(wave), ngrid)
-    except(IOError):
-        ss = read_binary_spec("{}_z{}.spectra.bin".format(specname, zstr), len(wave), ngrid)
-    #logg = np.genfromtxt("{}_logg.dat".format(specname))
-    #logt = np.genfromtxt("{}_logt.dat".format(specname))
-    #spec = ss.reshape(len(logg), len(logt), len(wave))
-    valid = ss.max(axis=1) > 1e-32
-    return wave, ss, valid
-
-
-def renorm(spec, normed_spec, wlo=5e3, whi=2e4):
-
-    w, f = spec
-    wn, fn = normed_spec
-    f = np.squeeze(f)
-    fn = np.squeeze(fn)
-    g = (w > wlo) & (w < whi)
-    l = np.trapz(f[g], w[g])
-    g = (wn > wlo) & (wn < whi)
-    ln = np.trapz(fn[g], wn[g])
-    return ln / l, f * ln / l
 
 
 def rectify_sed(sedfile):
@@ -121,6 +91,64 @@ def interpolate_to_grid(grid_pars, interpolator, valid=True, plot=None,
         allspec.append(np.squeeze(bspec))
 
     return interpolator.wavelengths, np.array(allspec), [outside, inside, extreme]
+
+
+def nearest_tg(interpolator, pars):
+    """Do nearest neighbor but, first find the nearest logt and only then the
+    nearest logg
+    """
+    tgrid = np.unique(interpolator._libparams["logt"])
+    tt = tgrid[np.argmin(abs(tgrid - pars["logt"]))]
+    thist = interpolator._libparams["logt"] == tt
+    ggrid = np.unique(interpolator._libparams["logg"][thist])
+    gg = ggrid[np.argmin(abs(ggrid - pars["logg"]))]
+    choose = ((interpolator._libparams["logt"] == tt) &
+              (interpolator._libparams["logg"] == gg))
+    assert choose.sum() == 1
+    ind = np.where(choose)[0][0]
+    wght = 1.0
+    return np.array([ind]), np.array([wght])
+
+
+def extremeg(interpolator, pars):
+    """Find if a set of parameters is below the lowest existing gravity for
+    that temperature.
+    """
+    tgrid = np.unique(interpolator._libparams["logt"])
+    tt = tgrid[np.argmin(abs(tgrid - pars["logt"]))]
+    thist = interpolator._libparams["logt"] == tt
+    ggrid = np.unique(interpolator._libparams["logg"][thist])
+    return (pars["logg"] < ggrid.min()) or (pars["logg"] > ggrid.max())
+
+
+def get_binary_spec(ngrid, zstr="0.0200", speclib="BaSeL3.1/basel"):
+    """
+    :param zstr: for basel "0.0002", "0.0006", "0.0020", "0.0063", "0.0200", "0.0632"
+    """
+    specname = "{}/SPECTRA/{}".format(os.environ["SPS_HOME"], speclib)
+    wave = np.genfromtxt("{}.lambda".format(specname))
+    try:
+        ss = read_binary_spec("{}_wlbc_z{}.spectra.bin".format(specname, zstr), len(wave), ngrid)
+    except(IOError):
+        ss = read_binary_spec("{}_z{}.spectra.bin".format(specname, zstr), len(wave), ngrid)
+    #logg = np.genfromtxt("{}_logg.dat".format(specname))
+    #logt = np.genfromtxt("{}_logt.dat".format(specname))
+    #spec = ss.reshape(len(logg), len(logt), len(wave))
+    valid = ss.max(axis=1) > 1e-32
+    return wave, ss, valid
+
+
+def renorm(spec, normed_spec, wlo=5e3, whi=2e4):
+
+    w, f = spec
+    wn, fn = normed_spec
+    f = np.squeeze(f)
+    fn = np.squeeze(fn)
+    g = (w > wlo) & (w < whi)
+    l = np.trapz(f[g], w[g])
+    g = (wn > wlo) & (wn < whi)
+    ln = np.trapz(fn[g], wn[g])
+    return ln / l, f * ln / l
 
 
 def comp_text(inds, wghts, interpolator):
@@ -176,34 +204,6 @@ def compare_at(charlie, interpolator, logg=4.5, logt=np.log10(5750.),
     ax.set_title("target: {logt:4.3f} {logg:3.2f}".format(logg=logg, logt=logt))
 
     return fig, ax
-
-
-def nearest_tg(interpolator, pars):
-    """Do nearest neighbor but, first find the nearest logt and only then the
-    nearest logg
-    """
-    tgrid = np.unique(interpolator._libparams["logt"])
-    tt = tgrid[np.argmin(abs(tgrid - pars["logt"]))]
-    thist = interpolator._libparams["logt"] == tt
-    ggrid = np.unique(interpolator._libparams["logg"][thist])
-    gg = ggrid[np.argmin(abs(ggrid - pars["logg"]))]
-    choose = ((interpolator._libparams["logt"] == tt) &
-              (interpolator._libparams["logg"] == gg))
-    assert choose.sum() == 1
-    ind = np.where(choose)[0][0]
-    wght = 1.0
-    return np.array([ind]), np.array([wght])
-
-
-def extremeg(interpolator, pars):
-    """Find if a set of parameters is below the lowest existing gravity for
-    that temperature.
-    """
-    tgrid = np.unique(interpolator._libparams["logt"])
-    tt = tgrid[np.argmin(abs(tgrid - pars["logt"]))]
-    thist = interpolator._libparams["logt"] == tt
-    ggrid = np.unique(interpolator._libparams["logg"][thist])
-    return (pars["logg"] < ggrid.min()) or (pars["logg"] > ggrid.max())
 
 
 def show_coverage(grid_pars, libparams, inds, valid):
