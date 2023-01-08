@@ -17,7 +17,8 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
 
 ## Procedure
 
-1. Install.  You should have FSPS already installed and `$SPS_HOME` environment variable set.
+1. Install.  You should have FSPS already installed and `$SPS_HOME` environment
+   variable set.
 
    ```sh
    cd $SCRATCH/conroy_lab/$USER
@@ -37,10 +38,13 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    for f in $fdir/*full*h5; do ls ${f/.full./.flux.}; done
    ```
 
-   If they are not, then you need to make them using `make_flux.py`, driven by `ody_flux.sh`
+   If they are not, then you need to make them using `make_flux.py`, driven by
+   `ody_flux.sh`
 
 3. Make the low resolution SED H5 files, and the H5 files of the SEDs
-   interpolated to the FSPS logt-logg gridpoints (based on BaSeL or, in new versions, c3k)
+   interpolated to the FSPS logt-logg gridpoints (based on BaSeL or, in new
+   versions, c3k).  Also make binary format versions for FSPS itself, and
+   metadata files (wavelength, resolution, zlegend)
 
    ```sh
    cd jobs/
@@ -54,21 +58,12 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    specified in `c3k_resample.py`.  The number of jobs in the array should be
    equal to the number of feh-afe pairs (usually 11 * N_afe)
 
-4. Convert the resampled (in wavelength and logg and logt) spectra in the H5
-   file to binary format for FSPS, and include additional files that are
-   relevant (`zlegend.dat`, `*.lambda`) using `c3k_binary.py`.  Note that each
-   job will run on a different `afe` value, typically use jobid=1 for solar-scaled
-
-   ```sh
-   sbatch --export=ALL,libname=${libname} --array=1-1 ody_binary.sh
-   ```
-
    There are now several sets of binary files and ancillary files in the
    `output/${libname}/for_fsps/` directory (by default) that can be moved to the
    ```$SPS_HOME/SPECTRA/C3K``` directory.  By altering `sps_vars.f90` you can
    choose to use these spectra.
 
-5. Implement in FSPS
+4. Implement in FSPS
 
    Assuming you have downloaded FSPS, the first thing to do is copy the relevant
    files to the FSPS repo.  Note this changes version tracked files!  In principle
@@ -109,7 +104,7 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    You can now recompile fsps (`cd $SPS_HOME/src; make clean; make all`) and it
    should use the new C3K spectral library
 
-6. Implement in python-fsps
+5. Implement in python-fsps
 
 
    This requires a [development install]

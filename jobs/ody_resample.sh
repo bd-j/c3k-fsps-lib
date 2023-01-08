@@ -26,6 +26,6 @@ mkdir -p $seddir
 mkdir -p ${seddir}/for_fsps
 
 python c3k_resample.py --zindex ${SLURM_ARRAY_TASK_ID} --ck_vers c3k_v1.3 \
-                       --segment_file $segments --oversample 2 \
-                       --seddir ${seddir} --sedname ${libname} --fulldir ${fulldir} \
+                       --segment_file $segments --oversample 2 --sedname ${libname} \
+                       --seddir ${seddir} --fulldir ${fulldir} --bindir ${seddir}/for_fsps \
                        --verbose=False --nowrite 0
