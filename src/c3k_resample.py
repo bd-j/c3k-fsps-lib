@@ -358,6 +358,6 @@ if __name__ == "__main__":
     if args.make_bins:
         logger.info("Making spectral binary file")
         to_bin(feh=feh, afe=afe, args=args)
-        if afe == 0:
+        if (afe == 0) & (feh == 0):
             logger.info("Making FSPS metadata files")
             make_fsps_metadata(fehlist, args)

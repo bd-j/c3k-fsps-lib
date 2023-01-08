@@ -101,10 +101,10 @@ def get_ckc_parser():
     parser.add_argument("--ck_vers", type=str, default="c3k_v1.3",
                         help=("Name of directory that contains the version of C3K spectra to use."))
     parser.add_argument("--basedir", type=str,
-                        default='/n/holystore01/LABS/conroy_lab/Lab/kurucz/grids',
+                        default='/n/holystore01/LABS/conroy_lab/Lab/cconroy/kurucz/grids',
                         help=("Location of the directories containing different C3K versions."))
     parser.add_argument("--fulldir", type=str,
-                        default='/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kuruczdata/kurucz/{}/fullres/',
+                        default='/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/{}/fullres/',
                         help=("Location to store the HDF5 versions of .spec and .flux"))
     parser.add_argument("--seddir", type=str, default='./',
                         help=("Path to the directory where the resampled sed files will be placed."))
