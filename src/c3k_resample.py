@@ -5,7 +5,7 @@
 the logt-logg grid for fsps.
 """
 
-import os, shutil
+import sys, os, shutil
 from itertools import product
 import logging
 
@@ -15,7 +15,7 @@ from scipy import interpolate
 
 from prospect.sources import StarBasis
 from utils_resample import make_seds
-from utils_fsps import get_kiel_grid, rectify_sed, interpolate_to_grid
+from utils_fsps import get_kiel_grid, interpolate_to_grid
 from utils_fsps import get_binary_spec, interpolate_to_basel
 from utils import get_ckc_parser, sed_to_bin
 import constants
@@ -24,6 +24,7 @@ import constants
 __all__ = ["sed", "rectify_sed", "to_grid", "to_bin", "make_fsps_metadata"]
 
 
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger("resampler")
 logger.setLevel(logging.INFO)
 
@@ -193,9 +194,9 @@ def to_grid(feh, afe, args, sedfile=None):
         interp_meth = interpolate_to_grid
 
     # Rectify?
-    if args.get("rectify", False):
+    if getattr(args, "rectify", False):
         logger.info("Dilating C3K grid in logg before interpolating to FSPS grid")
-        rectified = sedfile.replace(".h5", "rect.h5")
+        rectified = sedfile.replace(".h5", ".rect.h5")
         rectify_sed(sedfile, rectified)
         sedfile = rectified
 
@@ -206,13 +207,8 @@ def to_grid(feh, afe, args, sedfile=None):
     bwave, bspec, inds = interp_meth(grid_pars, interpolator, valid=valid)
 
     # Keep track of how interpolation was done
-    false = np.zeros(len(grid_pars), dtype=bool)
-    o, i, e = inds
-    out, interp, extreme = false.copy(), false.copy(), false.copy()
-    out[o] = True
-    interp[i] = True
-    extreme[e] = True
-    exact = (valid & (~out) & (~interp) & (~extreme))
+    outside, inside, extreme = inds
+    exact = (valid & (~outside) & (~inside) & (~extreme))
 
     if args.nowrite:
         return grid_pars, bwave, bspec, inds
@@ -223,12 +219,12 @@ def to_grid(feh, afe, args, sedfile=None):
         f.create_dataset("spectra", data=bspec)
         f.create_dataset("wavelengths", data=interpolator.wavelengths)
         idat = f.create_group("interpolation_info")
-        idat.create_dataset("interpolated", data=interp)
+        idat.create_dataset("interpolated", data=inside)
         idat.create_dataset("exact", data=exact)
-        idat.create_dataset("nearest_tg", data=extreme)
+        idat.create_dataset("extrapolated", data=extreme)
 
 
-def to_bin(fehlist=[-0.25, 0.0], zsol=0.0134, afe=0.0,
+def to_bin(feh=0.0, afe=0.0, zsol=0.0134,
            args=None, bindir=None, prefix=None):
 
     if bindir:
@@ -236,7 +232,7 @@ def to_bin(fehlist=[-0.25, 0.0], zsol=0.0134, afe=0.0,
     if prefix:
         args.prefix = prefix
 
-    if args.get("oldz", False):
+    if getattr(args, "oldz", False):
         z = zsol * 10**feh
         zstr = f"{z:1.4f}"
         binname = f"{args.bindir}/{args.prefix}_z{z:1.4f}.spectra.bin"
@@ -259,7 +255,7 @@ def make_fsps_metadata(fehlist, args, zsol=0.0134):
     zname = f"{args.bindir}/{args.prefix}_zlegend.dat"
     zlegend = open(zname, "w")
     for feh in np.sort(fehlist):
-        if args.get("oldz", False):
+        if getattr(args, "oldz", False):
             z = zsol * 10**feh
             zstr = f"{z:1.4f}"
         else:
@@ -268,7 +264,7 @@ def make_fsps_metadata(fehlist, args, zsol=0.0134):
     zlegend.close()
 
     # Now make the wavelength file
-    sedfile = template.format(args.seddir, args.ck_vers, fehlist[-2], 0.0, args.sedname)
+    sedfile = template.format(args.seddir, args.ck_vers, fehlist[0], 0.0, args.sedname)
     with h5py.File(sedfile, "r") as f:
         wave = np.array(f["wavelengths"])
         res = f["resolution"][:]
@@ -301,9 +297,9 @@ if __name__ == "__main__":
     parser = get_ckc_parser()
     parser.add_argument("--use_basel_grid", type=int, default=0)
     parser.add_argument("--rectify", type=int, default=1)
-    parser.add_argument("--make_sed", type=int, default=1)
-    parser.add_argument("--make_grd", type=int, default=1)
-    parser.add_argument("--make_bin", type=int, default=1)
+    parser.add_argument("--make_seds", type=int, default=1)
+    parser.add_argument("--make_grid", type=int, default=1)
+    parser.add_argument("--make_bins", type=int, default=1)
     parser.add_argument("--bindir", type=str, default="",
                         help="location of binary files")
     parser.add_argument("--nowrite", type=int, default=0)
@@ -328,7 +324,7 @@ if __name__ == "__main__":
             afelist = np.concatenate(config["afelist"])
         if "oversample" in config:
             args.oversample = config["oversample"]
-            logger.inof(f"Using oversample={args.oversample} from {args.segment_file}")
+            logger.info(f"Using oversample={args.oversample} from {args.segment_file}")
         else:
             logger.info(f"Using oversample={args.oversample}")
         if ("tag" in config) and (args.prefix == ""):
@@ -340,25 +336,26 @@ if __name__ == "__main__":
     if args.zindex < 0:
         # for testing off odyssey
         feh, afe = 0.0, 0.0
+        fehlist = [feh]
     else:
         metlist = list(product(fehlist, afelist))
         feh, afe = metlist[args.zindex]
     logger.info(f"Working on [Fe/H]={feh}, [alpha/Fe]={afe}")
 
     # --- make the sed file ---
-    if args.make_sed:
+    if args.make_seds:
         logger.info("Making H5 files with SEDs smoothed and stitched from native C3K spectral resolution")
         sedfile = sed(feh, afe, segments, args)
 
     # --- Make the SED interpolated to FSPS logt, logg grid ---
-    if args.make_grd:
+    if args.make_grid:
         logger.info("Interpolating smoothed SEDs to the FSPS Kiel grid")
         out = to_grid(feh, afe, args)
         if args.nowrite:
             grid_pars, bwave, bspec, inds = out
 
     # --- Make the binary file from the interpolated grid ---
-    if args.make_bin:
+    if args.make_bins:
         logger.info("Making spectral binary file")
         to_bin(feh=feh, afe=afe, args=args)
         if afe == 0:

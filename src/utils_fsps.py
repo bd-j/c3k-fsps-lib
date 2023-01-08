@@ -31,12 +31,13 @@ def get_kiel_grid(basel=False):
     if basel:
         dirn = os.path.join(os.environ["SPS_HOME"], "SPECTRA", "BaSeL3.1")
         pre = "basel_"
+        logt = np.np.genfromtxt(f"{dirn}/{pre}logt.dat")
     else:
         dirn = "../data"
         pre = ""
+        logt = np.genfromtxt(f"{dirn}/{pre}logt.dat")[:,0]
 
     logg = np.genfromtxt(f"{dirn}/{pre}logg.dat")
-    logt = np.genfromtxt(f"{dirn}/{pre}logt.dat")
     logt = np.log10(np.round(10**logt))
     ngrid = len(logg) * len(logt)
     dt = np.dtype([('logg', np.float), ('logt', np.float)])
@@ -47,9 +48,9 @@ def get_kiel_grid(basel=False):
 def interpolate_to_grid(grid_pars, interpolator, valid=None, verbose=False):
 
     allspec = []
-    outside = np.zeros(len(grid_pars))
-    inside = np.zeros(len(grid_pars))
-    extreme = np.zeros(len(grid_pars))
+    outside = np.zeros(len(grid_pars), dtype=bool)
+    inside = np.zeros(len(grid_pars), dtype=bool)
+    extreme = np.zeros(len(grid_pars), dtype=bool)
 
     # Turn off nearest neighbor when outside the grid.
     interpolator.n_neighbors = 0
@@ -58,11 +59,11 @@ def interpolate_to_grid(grid_pars, interpolator, valid=None, verbose=False):
         try:
             # in-hull
             _, bspec, _ = interpolator.get_star_spectrum(**dict_struct(p))
-            inside[i] = 1
+            inside[i] = True
         except(ValueError):
             # outside hull
             bspec = np.zeros_like(interpolator.wavelengths) + 1e-33
-            outside[i] = 1
+            outside[i] = True
         allspec.append(np.squeeze(bspec))
 
     return interpolator.wavelengths, np.array(allspec), [outside, inside, extreme]

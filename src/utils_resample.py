@@ -164,6 +164,7 @@ def make_one_sed(swave, spec, fwave, flux, segments=[()], clip=1e-33,
     """
     sed = []
     outwave = []
+    full_msg = []
     for j, (lo, hi, rout, fftsmooth) in enumerate(segments):
         # get the output wavelength vector for this segment, throwing away
         # the last point (which will be the same as the first of the next
@@ -196,6 +197,7 @@ def make_one_sed(swave, spec, fwave, flux, segments=[()], clip=1e-33,
 
         sed.append(s)
         outwave.append(out)
+        full_msg.append(msg)
 
     outwave = np.concatenate(outwave)
     sed = np.concatenate(sed)
@@ -205,4 +207,4 @@ def make_one_sed(swave, spec, fwave, flux, segments=[()], clip=1e-33,
     ind_max = np.searchsorted(outwave, fwave_max)
     sed[ind_max-9:] = sed[ind_max - 10] * (outwave[ind_max - 10] / outwave[ind_max-9:])**2
 
-    return outwave, sed, msg
+    return outwave, sed, "\n".join(full_msg)
