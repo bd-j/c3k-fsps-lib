@@ -10,12 +10,10 @@ from itertools import product
 import numpy as np
 import h5py
 
-from scipy import interpolate
-
 from utils import read_binary_spec
 from prospect.sources import StarBasis
 
-__all__ = ["get_kiel_grid", "get_binary_spec", "interpolate_to_grid"]
+__all__ = ["get_kiel_grid", "get_binary_spec", "interpolate_to_grid", "interpolate_to_basel"]
 
 
 def dict_struct(strct):
@@ -46,86 +44,38 @@ def get_kiel_grid(basel=False):
     return kiel_params
 
 
-def rectify_sed(sedfile, rectified):
-    """Do all the crazy magic to get models that are better for interpolating
-    to BaSeL params.  Necessary?
+def interpolate_to_grid(grid_pars, interpolator, valid=None, verbose=False):
+
+    allspec = []
+    outside = np.zeros(len(grid_pars))
+    inside = np.zeros(len(grid_pars))
+    extreme = np.zeros(len(grid_pars))
+
+    # Turn off nearest neighbor when outside the grid.
+    interpolator.n_neighbors = 0
+
+    for i, p in enumerate(grid_pars):
+        try:
+            # in-hull
+            _, bspec, _ = interpolator.get_star_spectrum(**dict_struct(p))
+            inside[i] = 1
+        except(ValueError):
+            # outside hull
+            bspec = np.zeros_like(interpolator.wavelengths) + 1e-33
+            outside[i] = 1
+        allspec.append(np.squeeze(bspec))
+
+    return interpolator.wavelengths, np.array(allspec), [outside, inside, extreme]
+
+
+def interpolate_to_basel(grid_pars, interpolator, valid=True, verbose=True):
+    """Old-style way of doing interpolation to every valid BaSeL grid pint
     """
-    with h5py.File(sedfile, "r") as sed:
-        assert "extended" not in sed
-        params = np.array(sed["parameters"])
-        spec = np.array(sed["spectra"])
-        wave = np.array(sed["wavelengths"])
-        res = np.array(sed["resolution"])
-        attrs = dict(sed.attrs)
-
-    tgrid = np.sort(np.unique(params["logt"]))
-    ggrid = np.sort(np.unique(params["logg"]))
-
-    fudged = np.zeros(len(params))
-
-    # --- fudge some spectra ---
-    new_pars, new_spec = [], []
-
-    # at each logt copy lowest logg to the two lower loggs
-    for logt in tgrid:
-        this = params["logt"] == logt
-        gmin = np.min(params[this]["logg"])
-        ind = (params["logt"] == logt) & (params["logg"] == gmin)
-        for newg in [gmin - 0.5, gmin-1.0]:
-            if newg >= ggrid.min():
-                newp = np.array(params[ind])
-                newp["logg"] = newg
-                news = spec[ind]
-                new_pars.append(newp)
-                new_spec.append(news)
-
-    # at lowest and second lowest logt, interpolate across holes in logg
-    for logt in tgrid[:2]:
-        this = params["logt"] == logt
-        x = params[this]["logg"]
-        y = spec[this, :]
-        newg = [logg for logg in ggrid if
-                (logg > x.min()) & (logg < x.max()) and (logg not in x)]
-        if len(newg) == 0:
-            continue
-
-        newg = np.array(newg)
-        f = interpolate.interp1d(x, y, axis=0, kind="linear")
-        news = f(newg)
-        newp = np.tile(params[this][0], len(newg))
-        newp["logg"] = newg
-        new_pars.append(newp)
-        new_spec.append(news)
-
-    new_pars = np.concatenate(new_pars)
-    new_spec = np.concatenate(new_spec)
-
-    # concatenate the new models to the old ones
-    params = np.concatenate([params, new_pars])
-    spec = np.concatenate([spec, new_spec])
-    fudged = np.concatenate([fudged, np.ones(len(new_pars))])
-
-    # write output to a file
-    with h5py.File(rectified, "x") as sed:
-        sed.create_dataset("extended", data=fudged)
-        if "wavelengths" not in sed:
-            sed.create_dataset("wavelengths", data=wave)
-        if "resolution" not in sed:
-            sed.create_dataset("resolution", data=res)
-        #if "parameters" in sed:
-        #    del sed["parameters"]
-        sed.create_dataset("parameters", data=params)
-        #if "spectra" in sed:
-        #    del sed["spectra"]
-        sed.create_dataset("spectra", data=spec)
-        sed.attrs.update(attrs)
-
-
-def interpolate_to_grid(grid_pars, interpolator, valid=True, verbose=True):
-
     bwave = interpolator.wavelengths
     allspec = []
-    outside, inside, extreme = [], [], []
+    outside = np.zeros(len(grid_pars))
+    inside = np.zeros(len(grid_pars))
+    extreme = np.zeros(len(grid_pars))
 
     for i, (p, v) in enumerate(zip(grid_pars, valid)):
         inds, wghts = interpolator.weights(**dict_struct(p))
@@ -134,13 +84,16 @@ def interpolate_to_grid(grid_pars, interpolator, valid=True, verbose=True):
             print(i, p, v, ex_g, len(inds))
         if ex_g and v:
             inds, wghts = nearest_tg(interpolator, p)
+            extreme[i] = 1
 
         # valid *and* (in-hull and non-extreme g)
         if (v and (len(inds) > 1)):
             _, bspec, _ = interpolator.get_star_spectrum(**dict_struct(p))
+            inside[i] = 1
         # valid *and* (out-hull or extremeg)
         elif (v and (len(inds) == 1)):
             bspec = interpolator._spectra[inds, :]
+            outside[i] = 1
         # not valid
         else:
             bspec = np.zeros_like(interpolator.wavelengths) + 1e-33

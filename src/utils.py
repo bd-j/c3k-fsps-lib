@@ -90,25 +90,28 @@ def get_ckc_parser():
     parser.add_argument("--afe", type=float, default=0.0,
                         help=("The afe value to process."))
 
+    # File specifying  resolution segments
+    parser.add_argument("--segment_file", type=str, default=None)
+
     # Number of pixels per sigma
     parser.add_argument("--oversample", type=float, default=2,
                         help="Factor by which to oversample the dispersion")
 
     # Filenames, library versions, and spectrum locations
     parser.add_argument("--ck_vers", type=str, default="c3k_v1.3",
-                        help=("Name of directory that contains the "
-                              "version of C3K spectra to use."))
+                        help=("Name of directory that contains the version of C3K spectra to use."))
     parser.add_argument("--basedir", type=str,
-                        default='/n/conroyfs1/cconroy/kurucz/grids',
-                        help=("Location of the directories containing "
-                              "different C3K versions."))
+                        default='/n/holystore01/LABS/conroy_lab/Lab/kurucz/grids',
+                        help=("Location of the directories containing different C3K versions."))
     parser.add_argument("--fulldir", type=str,
-                        default='/n/conroyfs1/bdjohnson/data/stars/{}/fullres/',
+                        default='/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kuruczdata/kurucz/{}/fullres/',
                         help=("Location to store the HDF5 versions of .spec and .flux"))
     parser.add_argument("--seddir", type=str, default='./',
-                        help=("Path to the directory where the sed files will be placed."))
-    parser.add_argument("--sedname", type=str, default="sed",
+                        help=("Path to the directory where the resampled sed files will be placed."))
+    parser.add_argument("--sedname", type=str, default="lr",
                         help=("nickname for the SED file, e.g. sedR500"))
+    parser.add_argument("--prefix", type=str, default="",
+                        help=("prefix for the binary files"))
 
     # For `make_full_h5` if making HDF5 for the first time
     parser.add_argument("--spec_type", type=str, default='lores',

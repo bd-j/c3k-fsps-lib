@@ -23,6 +23,7 @@ segments=$PROJECT_DIR/segments/segments_${libname}.yml
 # directory and label for output
 seddir=$PROJECT_DIR/output/${libname}
 mkdir -p $seddir
+mkdir -p ${seddir}/for_fsps
 
 python c3k_resample.py --zindex ${SLURM_ARRAY_TASK_ID} --ck_vers c3k_v1.3 \
                        --segment_file $segments --oversample 2 \
