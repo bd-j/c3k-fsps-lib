@@ -2,27 +2,23 @@
 # library, in the format (wave_low, wave_high, R, use_fft)
 # The units are AA, AA, lambda/FWHM, boolean
 
-# This resolution set was requested by Mark Dickinson for use with NIRSPEC
-# medium gratings (R~1000-2000)
-
 tag:
-  c3k_ns
+  c3k_hr
 
 # number of pixels per FWHM
 oversample:
   2
 
 segments:
-  - [100, 1000, 200, False]
-  - [1000, 3500, 1000, False]
-  - [3500, 20000, 1500, True]
-  - [20000, 24999, 1500, False]
-  - [25000, 50000, 1000, True]
-  - [50000, 10000000, 50, True]
+  - [100,    1000,    200, False]
+  - [1000,   3000,    500, False]
+  - [3000,  10000,   3000,  True]
+  - [10000, 24999,    500, False]
+  - [25000, 100000000, 50,  True]
 
 fehlist:
   - [-2.0, -1.75, -1.5, -1.25, -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5]
   #- [-2.25, -2.5, -2.75, -3.0, -3.5, -4.0]
 
 afelist:
-  - [+0.0]
+  - [-0.2, +0.0, +0.2, +0.4, +0.6]
