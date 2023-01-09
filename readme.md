@@ -58,6 +58,10 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    specified in `c3k_resample.py`.  The number of jobs in the array should be
    equal to the number of feh-afe pairs (usually 11 * N_afe)
 
+   If you're me the `output/${libname}` directory also gets copied to
+   `/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/c3k_v1.3/fsps-lib/`
+   otherwise the script fails on the last line.
+
    There are now several sets of binary files and ancillary files in the
    `output/${libname}/for_fsps/` directory (by default) that can be moved to the
    ```$SPS_HOME/SPECTRA/C3K``` directory.  By altering `sps_vars.f90` you can
@@ -66,11 +70,12 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
 4. Implement in FSPS
 
    Assuming you have downloaded FSPS, the first thing to do is copy the relevant
-   files to the FSPS repo.  Note this changes version tracked files!  In principle
-   you could change the prefix, but that's more complicated.
+   files to the FSPS repo.  Note this changes version tracked files!  The prefix also changes.
+
    ```sh
-   cp <path/to/output/libname>/for_fsps/c3k_afe+0.0* $SPS_HOME/SPECTRA/C3K/
-   cp <path/to/output/libname>/for_fsps/c3k_afe+0.0_zlegend.dat $SPS_HOME/SPECTRA/C3K/zlegend.dat
+   cp <path/to/output/libname>/for_fsps/<prefix>*bin $SPS_HOME/SPECTRA/C3K/
+   cp <path/to/output/libname>/for_fsps/<prefix>*dat $SPS_HOME/SPECTRA/C3K/
+   cp <path/to/output/libname>/for_fsps/<prefix>_zlegend.dat $SPS_HOME/SPECTRA/C3K/zlegend.dat
    ```
 
    Then, you need to change the `sps_vars.f90` code.  You'll want to specify the

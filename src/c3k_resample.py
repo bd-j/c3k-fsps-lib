@@ -297,6 +297,7 @@ if __name__ == "__main__":
     parser = get_ckc_parser()
     parser.add_argument("--use_basel_grid", type=int, default=0)
     parser.add_argument("--rectify", type=int, default=1)
+    parser.add_argument("--oldz", type=int, default=0)
     parser.add_argument("--make_seds", type=int, default=1)
     parser.add_argument("--make_grid", type=int, default=1)
     parser.add_argument("--make_bins", type=int, default=1)
@@ -356,7 +357,7 @@ if __name__ == "__main__":
 
     # --- Make the binary file from the interpolated grid ---
     if args.make_bins:
-        logger.info("Making spectral binary file")
+        logger.info(f"Making spectral binary file at {args.bindir} with prefix {args.prefix}")
         to_bin(feh=feh, afe=afe, args=args)
         if (afe == 0) & (feh == 0):
             logger.info("Making FSPS metadata files")
