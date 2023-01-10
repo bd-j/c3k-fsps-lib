@@ -279,7 +279,7 @@ def make_fsps_metadata(fehlist, args, zsol=0.0134):
     zlegend.close()
 
     # Now make the wavelength file
-    sedfile = template.format(args.seddir, args.ck_vers, fehlist[0], 0.0, args.sedname)
+    sedfile = template.format(args.seddir, args.ck_vers, 0.0, 0.0, args.sedname)
     with h5py.File(sedfile, "r") as f:
         wave = np.array(f["wavelengths"])
         res = f["resolution"][:]
