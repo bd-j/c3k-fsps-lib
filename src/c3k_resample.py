@@ -109,6 +109,21 @@ def rectify_sed(sedfile, rectified):
                 new_pars.append(newp)
                 new_spec.append(news)
 
+    # at logt < 4 copy max(logg) (=5.0 hopefully) to logg<=5.5 if needed
+    for logt in tgrid:
+        if logt > 4.0:
+            continue
+        this = params["logt"] == logt
+        gmax = np.max(params[this]["logg"])
+        ind = (params["logt"] == logt) & (params["logg"] == gmin)
+        gtarg = np.arange(gmax+0.5, 5.51, 0.5)
+        for newg in gtarg:
+            newp = np.array(params[ind])
+            newp["logg"] = newg
+            news = spec[ind]
+            new_pars.append(newp)
+            new_spec.append(news)
+
     # at lowest and second lowest logt, interpolate across holes in logg
     for logt in tgrid[:2]:
         this = params["logt"] == logt
