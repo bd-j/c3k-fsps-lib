@@ -13,7 +13,7 @@ import h5py
 from utils import read_binary_spec
 from prospect.sources import StarBasis
 
-__all__ = ["get_basel_params", "get_binary_spec", "interpolate_to_basel"]
+__all__ = ["get_kiel_grid", "get_binary_spec", "interpolate_to_grid", "interpolate_to_basel"]
 
 
 def dict_struct(strct):
@@ -23,19 +23,112 @@ def dict_struct(strct):
     return dict([(n, strct[n]) for n in strct.dtype.names])
 
 
-def get_basel_params():
-    """Get the BaSeL grid parameters as a 1-d list of parameter tuples.  The
+def get_kiel_grid(basel=False):
+    """Get the logt-logg grid parameters as a 1-d list of parameter tuples.  The
     binary files are written in the order logg, logt, wave with wave changing
     fastest and logg the slowest.
     """
-    fsps_dir = os.path.join(os.environ["SPS_HOME"], "SPECTRA", "BaSeL3.1")
-    logg = np.genfromtxt("{}/basel_logg.dat".format(fsps_dir))
-    logt = np.genfromtxt("{}/basel_logt.dat".format(fsps_dir))
+    if basel:
+        dirn = os.path.join(os.environ["SPS_HOME"], "SPECTRA", "BaSeL3.1")
+        pre = "basel_"
+        logt = np.np.genfromtxt(f"{dirn}/{pre}logt.dat")
+    else:
+        dirn = "../data"
+        pre = ""
+        logt = np.genfromtxt(f"{dirn}/{pre}logt.dat")[:,0]
+
+    logg = np.genfromtxt(f"{dirn}/{pre}logg.dat")
     logt = np.log10(np.round(10**logt))
     ngrid = len(logg) * len(logt)
     dt = np.dtype([('logg', np.float), ('logt', np.float)])
-    basel_params = np.array(list(product(logg, logt)), dtype=dt)
-    return basel_params
+    kiel_params = np.array(list(product(logg, logt)), dtype=dt)
+    return kiel_params
+
+
+def interpolate_to_grid(grid_pars, interpolator, valid=None, verbose=False):
+
+    allspec = []
+    outside = np.zeros(len(grid_pars), dtype=bool)
+    inside = np.zeros(len(grid_pars), dtype=bool)
+    extreme = np.zeros(len(grid_pars), dtype=bool)
+
+    # Turn off nearest neighbor when outside the grid.
+    interpolator.n_neighbors = 0
+
+    for i, p in enumerate(grid_pars):
+        try:
+            # in-hull
+            _, bspec, _ = interpolator.get_star_spectrum(**dict_struct(p))
+            inside[i] = True
+        except(ValueError):
+            # outside hull
+            bspec = np.zeros_like(interpolator.wavelengths) + 1e-33
+            outside[i] = True
+        allspec.append(np.squeeze(bspec))
+
+    return interpolator.wavelengths, np.array(allspec), [outside, inside, extreme]
+
+
+def interpolate_to_basel(grid_pars, interpolator, valid=True, verbose=True):
+    """Old-style way of doing interpolation to every valid BaSeL grid pint
+    """
+    bwave = interpolator.wavelengths
+    allspec = []
+    outside = np.zeros(len(grid_pars))
+    inside = np.zeros(len(grid_pars))
+    extreme = np.zeros(len(grid_pars))
+
+    for i, (p, v) in enumerate(zip(grid_pars, valid)):
+        inds, wghts = interpolator.weights(**dict_struct(p))
+        ex_g = extremeg(interpolator, p)
+        if verbose:
+            print(i, p, v, ex_g, len(inds))
+        if ex_g and v:
+            inds, wghts = nearest_tg(interpolator, p)
+            extreme[i] = 1
+
+        # valid *and* (in-hull and non-extreme g)
+        if (v and (len(inds) > 1)):
+            _, bspec, _ = interpolator.get_star_spectrum(**dict_struct(p))
+            inside[i] = 1
+        # valid *and* (out-hull or extremeg)
+        elif (v and (len(inds) == 1)):
+            bspec = interpolator._spectra[inds, :]
+            outside[i] = 1
+        # not valid
+        else:
+            bspec = np.zeros_like(interpolator.wavelengths) + 1e-33
+        allspec.append(np.squeeze(bspec))
+
+    return interpolator.wavelengths, np.array(allspec), [outside, inside, extreme]
+
+
+def nearest_tg(interpolator, pars):
+    """Do nearest neighbor but, first find the nearest logt and only then the
+    nearest logg
+    """
+    tgrid = np.unique(interpolator._libparams["logt"])
+    tt = tgrid[np.argmin(abs(tgrid - pars["logt"]))]
+    thist = interpolator._libparams["logt"] == tt
+    ggrid = np.unique(interpolator._libparams["logg"][thist])
+    gg = ggrid[np.argmin(abs(ggrid - pars["logg"]))]
+    choose = ((interpolator._libparams["logt"] == tt) &
+              (interpolator._libparams["logg"] == gg))
+    assert choose.sum() == 1
+    ind = np.where(choose)[0][0]
+    wght = 1.0
+    return np.array([ind]), np.array([wght])
+
+
+def extremeg(interpolator, pars):
+    """Find if a set of parameters is below the lowest existing gravity for
+    that temperature.
+    """
+    tgrid = np.unique(interpolator._libparams["logt"])
+    tt = tgrid[np.argmin(abs(tgrid - pars["logt"]))]
+    thist = interpolator._libparams["logt"] == tt
+    ggrid = np.unique(interpolator._libparams["logg"][thist])
+    return (pars["logg"] < ggrid.min()) or (pars["logg"] > ggrid.max())
 
 
 def get_binary_spec(ngrid, zstr="0.0200", speclib="BaSeL3.1/basel"):
@@ -66,92 +159,6 @@ def renorm(spec, normed_spec, wlo=5e3, whi=2e4):
     g = (wn > wlo) & (wn < whi)
     ln = np.trapz(fn[g], wn[g])
     return ln / l, f * ln / l
-
-
-def rectify_sed(sedfile):
-    """Do all the crazy magic to get models that are better for interpolating
-    to BaSeL params.  Necessary?
-    """
-    with h5py.File(sedfile, "r") as sed:
-        params = np.array(sed["parameters"])
-        spec = np.array(sed["spectra"])
-        wave = np.array(sed["wavelengths"])
-
-    # Adjust temperatures
-    for t in [37000., 42000., 47000.]:
-        this = 10**params["logt"] == t
-        params[this]["logt"] = np.log10(t)
-
-    # Copy logg
-    sel = params["logg"] == -0.50
-    params[sel]["logg"] = -0.51
-    newpars = np.zeros(sel.sum, dtype=params.dtype)
-
-
-def interpolate_to_basel(charlie, interpolator, valid=True, plot=None,
-                         renorm=False, verbose=True):
-
-    bwave = interpolator.wavelengths
-    if plot is not None:
-        import matplotlib.pyplot as pl
-        from matplotlib.backends.backend_pdf import PdfPages
-        out_pdf = PdfPages('out'+plot)
-        in_pdf = PdfPages('in'+plot)
-        ex_pdf = PdfPages('ex'+plot)
-    basel_pars, cwave, cspec = charlie
-    allspec = []
-    outside, inside, extreme = [], [], []
-
-    for i, (p, v) in enumerate(zip(basel_pars, valid)):
-        title = "target: {logt:4.3f}, {logg:3.2f}".format(**dict_struct(p))
-        inds, wghts = interpolator.weights(**dict_struct(p))
-        ex_g = extremeg(interpolator, p)
-        if verbose:
-            print(i, p, v, ex_g, len(inds))
-        if ex_g and v:
-            inds, wghts = nearest_tg(interpolator, p)
-
-        # valid *and* (in-hull and non-extreme g)
-        # could use `or` except for normalization - need a valid sample.
-        if (v and (len(inds) > 1)):
-            _, bspec, _ = interpolator.get_star_spectrum(**dict_struct(p))
-            if renorm:
-                norm, bspec = renorm([bwave, bspec], [cwave, cspec[i,:]])
-            if (wghts.max() < 1.0) & (plot is not None):
-                fig, ax = plot_interp(cwave, cspec[i,:], bspec, inds, wghts, interpolator)
-                ax.set_title(title + ", norm={:4.3f}".format(norm))
-                ax.legend()
-                inside.append(i)
-                in_pdf.savefig(fig)
-                pl.close(fig)
-
-        # valid *and* (out-hull or extremeg)
-        elif (v and (len(inds) == 1)):
-            bspec = interpolator._spectra[inds, :]
-            if renorm:
-                norm, bspec = renorm([bwave, bspec], [cwave, cspec[i,:]])
-            if plot is not None:
-                fig, ax = plot_interp(cwave, cspec[i,:], bspec, inds, wghts, interpolator)
-                ax.set_title(title + ", norm={:4.3f}".format(norm))
-                ax.legend()
-                if ex_g:
-                    extreme.append(i)
-                    ex_pdf.savefig(fig)
-                else:
-                    outside.append(i)
-                    out_pdf.savefig(fig)
-                pl.close(fig)
-        # not valid
-        else:
-            bspec = np.zeros_like(interpolator.wavelengths) + 1e-33
-        allspec.append(np.squeeze(bspec))
-
-    if plot is not None:
-        out_pdf.close()
-        in_pdf.close()
-        ex_pdf.close()
-
-    return interpolator.wavelengths, np.array(allspec), [outside, inside, extreme]
 
 
 def comp_text(inds, wghts, interpolator):
@@ -209,36 +216,8 @@ def compare_at(charlie, interpolator, logg=4.5, logt=np.log10(5750.),
     return fig, ax
 
 
-def nearest_tg(interpolator, pars):
-    """Do nearest neighbor but, first find the nearest logt and only then the
-    nearest logg
-    """
-    tgrid = np.unique(interpolator._libparams["logt"])
-    tt = tgrid[np.argmin(abs(tgrid - pars["logt"]))]
-    thist = interpolator._libparams["logt"] == tt
-    ggrid = np.unique(interpolator._libparams["logg"][thist])
-    gg = ggrid[np.argmin(abs(ggrid - pars["logg"]))]
-    choose = ((interpolator._libparams["logt"] == tt) &
-              (interpolator._libparams["logg"] == gg))
-    assert choose.sum() == 1
-    ind = np.where(choose)[0][0]
-    wght = 1.0
-    return np.array([ind]), np.array([wght])
-
-
-def extremeg(interpolator, pars):
-    """Find if a set of parameters is below the lowest existing gravity for
-    that temperature.
-    """
-    tgrid = np.unique(interpolator._libparams["logt"])
-    tt = tgrid[np.argmin(abs(tgrid - pars["logt"]))]
-    thist = interpolator._libparams["logt"] == tt
-    ggrid = np.unique(interpolator._libparams["logg"][thist])
-    return (pars["logg"] < ggrid.min()) or (pars["logg"] > ggrid.max())
-
-
-def show_coverage(basel_pars, libparams, inds):
-    false = np.zeros(len(basel_pars), dtype=bool)
+def show_coverage(grid_pars, libparams, inds, valid):
+    false = np.zeros(len(grid_pars), dtype=bool)
     o, i, e = inds
     out, interp, extreme = false.copy(), false.copy(), false.copy()
     out[o] = True
@@ -248,17 +227,17 @@ def show_coverage(basel_pars, libparams, inds):
 
     import matplotlib.pyplot as pl
     fig, ax = pl.subplots()
-    ax.plot(basel_pars["logt"], basel_pars["logg"], 'o', alpha=0.2,
+    ax.plot(grid_pars["logt"], grid_pars["logg"], 'o', alpha=0.2,
             label="BaSeL grid")
-    ax.plot(basel_pars["logt"][exact], basel_pars["logg"][exact], 'o',
+    ax.plot(grid_pars["logt"][exact], grid_pars["logg"][exact], 'o',
             label="exact")
-    ax.plot(basel_pars["logt"][out], basel_pars["logg"][out], 'o',
+    ax.plot(grid_pars["logt"][out], grid_pars["logg"][out], 'o',
             label="outside C3K")
-    ax.plot(basel_pars["logt"][interp], basel_pars["logg"][interp], 'o',
+    ax.plot(grid_pars["logt"][interp], grid_pars["logg"][interp], 'o',
             label="interpolated")
-    ax.plot(basel_pars["logt"][extreme], basel_pars["logg"][extreme], 'o',
+    ax.plot(grid_pars["logt"][extreme], grid_pars["logg"][extreme], 'o',
             label="nearest (t, g)")
-    ax.plot(libparams["logt"], libparams["logg"], 'ko', alpha=0.3, label="C3K") 
+    ax.plot(libparams["logt"], libparams["logg"], 'ko', alpha=0.3, label="C3K")
     ax.invert_yaxis()
     ax.invert_xaxis()
     #ax.legend(loc=0)
