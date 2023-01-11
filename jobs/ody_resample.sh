@@ -28,7 +28,7 @@ seddir=$PROJECT_DIR/output/${libname}
 mkdir -p $seddir
 mkdir -p ${seddir}/for_fsps
 
-python c3k_resample.py --zindex ${SLURM_ARRAY_TASK_ID} --ck_vers c3k_v1.3 \
+python c3k_resample.py --zindex ${SLURM_ARRAY_TASK_ID} --ck_vers c3k_v1.3 --oldz 0 \
                        --segment_file $segments --oversample 2 --sedname ${libname} \
                        --seddir ${seddir} --fulldir ${fulldir} --bindir ${seddir}/for_fsps \
-                       --verbose=False --nowrite 0
+                       --verbose=False --nowrite 0 --make_seds 1 --make_grid 1 --make_bins 1

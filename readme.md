@@ -58,33 +58,41 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    specified in `c3k_resample.py`.  The number of jobs in the array should be
    equal to the number of feh-afe pairs (usually 11 * N_afe)
 
-   If you're me the `output/${libname}` directory also gets copied to
-   `/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/c3k_v1.3/fsps-lib/`
-   otherwise the script fails on the last line.
-
    There are now several sets of binary files and ancillary files in the
    `output/${libname}/for_fsps/` directory (by default) that can be moved to the
    ```$SPS_HOME/SPECTRA/C3K``` directory.  By altering `sps_vars.f90` you can
    choose to use these spectra.
 
-4. Implement in FSPS
+4. If you're me the `output/${libname}` directory should be copied to
+   `/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/c3k_v1.3/fsps-lib/`
 
-   Assuming you have downloaded FSPS, the first thing to do is copy the relevant
-   files to the FSPS repo.  Note this changes version tracked files!  The prefix also changes.
+   ```sh
+   cd jobs/
+   libname=nirspec # name of the segments_<libname>.yml file
+   sbatch --export=ALL,libname=${libname} ody_copy.sh
+   ```
+
+5. Implement in FSPS
+
+   This depends a bit on what version of FSPS you have. Instructions her are for
+   the 'older' FSPS.Assuming you have downloaded FSPS, the first thing to do is
+   copy the relevant files to the FSPS repo.  Note this changes version tracked
+   files!  The prefix also changes.
 
    ```sh
    cp <path/to/output/libname>/for_fsps/<prefix>*bin $SPS_HOME/SPECTRA/C3K/
    cp <path/to/output/libname>/for_fsps/<prefix>*dat $SPS_HOME/SPECTRA/C3K/
    cp <path/to/output/libname>/for_fsps/<prefix>_zlegend.dat $SPS_HOME/SPECTRA/C3K/zlegend.dat
+   cp <path/to/output/libname>/for_fsps/<prefix>.wave $SPS_HOME/SPECTRA/C3K/<prefix>.lambda
    ```
 
    Then, you need to change the `sps_vars.f90` code.  You'll want to specify the
-   the C3K library using the precompiler directives, and you'll need to change
+   the C3K library using the pre-compiler directives, and you'll need to change
    environment variables in the ``elif (C3K)`` block; the values for `nzinit`
    and `nspec` can be obtained by `wc` on the `*.lambda` and `*_zlegend.dat`
    files, and the `spec_type` variable (and its length!) could be changed to
    e.g. `c3k_ns_afe+0.0`. Here's what the diff of `sps_vars.f90` looks like with
-   nz=11 and nspec=13749 and no change to the prefix:
+   `nz=11`, `nspec=13749` and a prefix of `c3k_ns`:
 
    ```diff
    @@ 7
@@ -101,19 +109,17 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    -        CHARACTER(11), PARAMETER :: spec_type = 'c3k_afe+0.0'
    -        INTEGER, PARAMETER :: nzinit=11
    -        INTEGER, PARAMETER :: nspec=11149  !46666 !47378 !, 26500
-   +        CHARACTER(11), PARAMETER :: spec_type = 'c3k_afe+0.0'
+   +        CHARACTER(6), PARAMETER :: spec_type = 'c3k_ns'
    +        INTEGER, PARAMETER :: nzinit=11
-   +        INTEGER, PARAMETER :: nspec=13749  !46666 !47378 !, 26500
+   +        INTEGER, PARAMETER :: nspec=13749
    ```
 
    You can now recompile fsps (`cd $SPS_HOME/src; make clean; make all`) and it
-   should use the new C3K spectral library
+   should use the new C3K spectral library.
 
-5. Implement in python-fsps
+6. Implement in python-fsps
 
-
-   This requires a [development install]
-   (https://dfm.io/python-fsps/current/installation/#installing-development-version)
+   This requires a [development install](https://dfm.io/python-fsps/current/installation/#installing-development-version)
    of python-fsps. You need to copy the files to `$SPS_HOME` as above. Then, after
    cloning the repo, you'll need to edit `fsps/src/fsps/libfsps/src/sps_vars.f90`
    in the same way as described above. Finally, install with the C3K library selected.
@@ -143,3 +149,6 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    python fsps_feature_demo.py
    open features.pdf
    ```
+
+   You can also plot the grid for every metallicity and the corresponding
+   isochrones with `make_hrd.py`
