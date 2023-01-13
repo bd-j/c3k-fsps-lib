@@ -7,7 +7,6 @@ from itertools import product
 import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib.backends.backend_pdf import PdfPages
-from read_isoc import isoc_table
 
 import h5py
 
@@ -26,13 +25,13 @@ def isoc_table(feh, afe, itype="MIST"):
     else:
         asign = "m"
 
-    if feh == 0.5:
-        feh = 0.4
+    #if feh == 0.5:
+    #    feh = 0.4
     if itype == "MIST":
         ifile = f"isoc_MIST2_z{sign}{np.abs(feh):3.2f}_afe{afe:+2.1f}.dat"
         absfile = os.path.join(sps_home, "ISOCHRONES", itype, ifile)
     else:
-        absfile = f"../data/isoc/mist2_iso/isoc_feh_{fsign}{np.abs(feh*100):03.0f}_afe_{asign}{np.abs(afe*10):01.0f}_vvcrit0.4_full.dat"
+        absfile = f"../data/isoc/mist_iso_v98/isoc_feh_{fsign}{np.abs(feh*100):03.0f}_afe_{asign}{np.abs(afe*10):01.0f}_vvcrit0.4_full.dat"
     with open(absfile, "r") as f:
         # drop the comment hash and mags field
         header = f.readline().split()[1:]

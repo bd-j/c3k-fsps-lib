@@ -316,6 +316,7 @@ if __name__ == "__main__":
     parser.add_argument("--make_seds", type=int, default=1)
     parser.add_argument("--make_grid", type=int, default=1)
     parser.add_argument("--make_bins", type=int, default=1)
+    parser.add_argument("--force_meta", type=int, default=-1)
     parser.add_argument("--bindir", type=str, default="",
                         help="location of binary files")
     parser.add_argument("--nowrite", type=int, default=0)
@@ -374,6 +375,6 @@ if __name__ == "__main__":
     if args.make_bins:
         logger.info(f"Making spectral binary file at {args.bindir} with prefix {args.prefix}")
         to_bin(feh=feh, afe=afe, args=args)
-        if (afe == 0) & (feh == 0):
+        if ((afe == 0) & (feh == 0)) | (args.force_meta == args.zindex):
             logger.info("Making FSPS metadata files")
             make_fsps_metadata(fehlist, args)
