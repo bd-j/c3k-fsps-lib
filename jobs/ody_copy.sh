@@ -5,12 +5,12 @@
 #SBATCH -N 1 # Ensure that all cores are on one machine
 #SBATCH -t 1:00:00 # Runtime
 #SBATCH -p conroy_priority # Partition to submit to
-#SBATCH --mem-per-cpu=2500 # Memory per node in MB (see also --mem-per-cpu)
+#SBATCH --mem-per-cpu=4000 # Memory per node in MB (see also --mem-per-cpu)
 #SBATCH -o logs/c3k_copy_%A.log # Standard out goes to this file
 #SBATCH -e logs/c3k_copy_%A.log # Standard err goes to this file
 
 date; hostname; pwd
-echo $libname
+echo 'libname='$libname
 
 
 # directory and label for output
