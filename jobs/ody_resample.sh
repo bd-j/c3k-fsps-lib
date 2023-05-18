@@ -9,6 +9,8 @@
 #SBATCH -o logs/c3k_resample_%A_%a.log # Standard out goes to this file
 #SBATCH -e logs/c3k_resample_%A_%a.log # Standard err goes to this file
 
+# call the script with --export=ALL,libname=<libname> (hr/lr/etc.)
+
 date; hostname; pwd
 echo $libname
 
