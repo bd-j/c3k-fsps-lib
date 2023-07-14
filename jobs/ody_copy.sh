@@ -16,6 +16,6 @@ echo 'libname='$libname
 # directory and label for output
 PROJECT_DIR=$SCRATCH/conroy_lab/$USER/c3k-fsps-lib
 seddir=$PROJECT_DIR/output/${libname}
-cvers=c3k_v2.2
+cvers=c3k_v1.3
 rm -rf /n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/${cvers}/fsps-lib/${libname}
 cp -r ${seddir} /n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/${cvers}/fsps-lib/

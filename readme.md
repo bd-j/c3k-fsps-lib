@@ -64,7 +64,7 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    choose to use these spectra.
 
 4. If you're me the `output/${libname}` directory should be copied to
-   `/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/c3k_v1.3/fsps-lib/`
+   `/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/${ck_vers}/fsps-lib/`
 
    ```sh
    cd jobs/

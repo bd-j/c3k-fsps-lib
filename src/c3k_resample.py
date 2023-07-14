@@ -348,6 +348,12 @@ if __name__ == "__main__":
             args.prefix = f"{config['tag']}"
 
         _ = shutil.copy(args.segment_file, args.seddir)
+        try:
+            import json
+            with open(os.path.join(args.segment_file, "args.json"), "w") as out:
+                json.dump(args, out)
+        except:
+            pass
 
     # --- CHOOSE THE METALLICITY ---
     if args.zindex < 0:

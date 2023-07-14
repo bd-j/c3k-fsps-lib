@@ -21,8 +21,9 @@ source activate c3k
 PROJECT_DIR=$SCRATCH/conroy_lab/$USER/c3k-fsps-lib
 cd $PROJECT_DIR/src
 
-# location of fullres and flux HDF5 files
-fulldir=/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/{}/fullopt
+# location of spec and flux HDF5 files
+synthe=optfal_vt10
+fulldir=/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/{}/${synthe}
 # segment specification
 segments=$PROJECT_DIR/segments/segments_${libname}.yml
 # directory and label for output

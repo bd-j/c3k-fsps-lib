@@ -1,0 +1,27 @@
+# This file lists the wavelength segments and resolution of the downsampled C3K
+# library, in the format (wave_low, wave_high, R, use_fft)
+# The units are AA, AA, lambda/FWHM, boolean
+
+# This resolution set is for the c3k_v1.3 optfal_vt10 files
+
+tag:
+  c3k_of
+
+# number of pixels per FWHM
+oversample:
+  2
+
+segments:
+  - [100, 4499, 200, False]
+  - [4500, 5500, 5000, True]
+  - [5500, 24999, 500, True]
+  - [25000, 50000, 200, True]
+  - [50000, 10000000, 50, True]
+
+fehlist:
+  - [-2.0, -1.75, -1.5, -1.25, -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5]
+  - [-2.25, -2.5]
+  #- [-2.75, -3.0, -3.5, -4.0]
+
+afelist:
+  - [-0.2, +0.0, +0.2, +0.4, +0.6]
