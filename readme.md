@@ -49,14 +49,14 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    ```sh
    cd jobs/
    libname=nirspec # name of the segments_<libname>.yml file
-   sbatch --export=ALL,libname=${libname} --array=0-54 ody_resample.sh
+   sbatch --export=ALL,libname=${libname} --array=0-64 ody_resample.sh
    ```
 
    Note that you may wish to change the resampling here, the metallicities to
    consider, or the output filename and directory.  The output names are given
    by the supplied `libname` and the metallicities to consider are
    specified in `c3k_resample.py`.  The number of jobs in the array should be
-   equal to the number of feh-afe pairs (usually 11 * N_afe)
+   equal to the number of feh-afe pairs (usually 13 * N_afe)
 
    There are now several sets of binary files and ancillary files in the
    `output/${libname}/for_fsps/` directory (by default) that can be moved to the

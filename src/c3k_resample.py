@@ -29,7 +29,7 @@ logger = logging.getLogger("resampler")
 logger.setLevel(logging.INFO)
 
 
-template = "{}/{}_feh{:+3.2f}_afe{:+2.1f}.{}.h5"
+template = "{}/{}/{}_feh{:+3.2f}_afe{:+2.1f}.{}.h5"
 
 
 def sed(feh, afe, segments, args):
@@ -63,8 +63,8 @@ def sed(feh, afe, segments, args):
     outname : string
         The name of the HDF5 file into which the resampled spectra have been stored
     """
-    specname = template.format(args.fulldir, args.ck_vers, feh, afe, "full")
-    fluxname = template.format(args.fulldir, args.ck_vers, feh, afe, "flux")
+    specname = template.format(args.fulldir, args.specdir, args.ck_vers, feh, afe, "full")
+    fluxname = template.format(args.fulldir, args.fluxdir, args.ck_vers, feh, afe, "flux")
     outname = template.format(args.seddir, args.ck_vers, feh, afe, args.sedname)
 
     # Read Files and make the sed file
