@@ -65,7 +65,7 @@ def sed(feh, afe, segments, args):
     """
     specname = template.format(args.fulldir, args.specdir, args.ck_vers, feh, afe, "full")
     fluxname = template.format(args.fulldir, args.fluxdir, args.ck_vers, feh, afe, "flux")
-    outname = template.format(args.seddir, args.ck_vers, feh, afe, args.sedname)
+    outname = template.format(args.seddir, "", args.ck_vers, feh, afe, args.sedname)
 
     # Read Files and make the sed file
     specfile = h5py.File(specname, "r")
@@ -193,7 +193,7 @@ def to_grid(feh, afe, args, sedfile=None):
         `{seddir}/{ck_vers}_feh{feh:+3.2f}_afe{afe:+2.1f}.{sedname}.h5`
     """
     # Filenames
-    sname = template.format(args.seddir, args.ck_vers, feh, afe, args.sedname)
+    sname = template.format(args.seddir, "", args.ck_vers, feh, afe, args.sedname)
     if sedfile is None:
         sedfile = sname
     outname = sedfile.replace(".h5", ".fsps.h5")
@@ -254,7 +254,7 @@ def to_bin(feh=0.0, afe=0.0, zsol=0.0134,
     else:
         binname = f"{args.bindir}/{args.prefix}_feh{feh:+3.2f}_afe{afe:+2.1f}.spec.bin"
 
-    sedfile = template.format(args.seddir, args.ck_vers, feh, afe, args.sedname)
+    sedfile = template.format(args.seddir, "", args.ck_vers, feh, afe, args.sedname)
     sedfile = sedfile.replace(".h5", ".fsps.h5")
     assert os.path.exists(sedfile)
     sed_to_bin(sedfile, binname)
@@ -279,7 +279,7 @@ def make_fsps_metadata(fehlist, args, zsol=0.0134):
     zlegend.close()
 
     # Now make the wavelength file
-    sedfile = template.format(args.seddir, args.ck_vers, 0.0, 0.0, args.sedname)
+    sedfile = template.format(args.seddir, "", args.ck_vers, 0.0, 0.0, args.sedname)
     with h5py.File(sedfile, "r") as f:
         wave = np.array(f["wavelengths"])
         res = f["resolution"][:]
