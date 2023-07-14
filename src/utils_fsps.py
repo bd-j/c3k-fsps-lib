@@ -40,7 +40,7 @@ def get_kiel_grid(basel=False):
     logg = np.genfromtxt(f"{dirn}/{pre}logg.dat")
     logt = np.log10(np.round(10**logt))
     ngrid = len(logg) * len(logt)
-    dt = np.dtype([('logg', np.float), ('logt', np.float)])
+    dt = np.dtype([('logg', np.float64), ('logt', np.float64)])
     kiel_params = np.array(list(product(logg, logt)), dtype=dt)
     return kiel_params
 
