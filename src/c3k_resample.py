@@ -63,7 +63,7 @@ def sed(feh, afe, segments, args):
     outname : string
         The name of the HDF5 file into which the resampled spectra have been stored
     """
-    specname = template.format(args.fulldir, args.specdir, args.ck_vers, feh, afe, "full")
+    specname = template.format(args.fulldir, args.specdir, args.ck_vers, feh, afe, "spec")
     fluxname = template.format(args.fulldir, args.fluxdir, args.ck_vers, feh, afe, "flux")
     outname = template.format(args.seddir, "", args.ck_vers, feh, afe, args.sedname)
 
