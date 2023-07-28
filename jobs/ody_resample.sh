@@ -22,7 +22,7 @@ PROJECT_DIR=$SCRATCH/conroy_lab/$USER/c3k-fsps-lib
 cd $PROJECT_DIR/src
 
 # location of spec and flux HDF5 files
-synthe=optfal_vt10
+synthe=fullopt
 fulldir=/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/{}/${synthe}
 # segment specification
 segments=$PROJECT_DIR/segments/segments_${libname}.yml
