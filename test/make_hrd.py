@@ -28,10 +28,11 @@ def isoc_table(feh, afe, itype="MIST"):
     #if feh == 0.5:
     #    feh = 0.4
     if itype == "MIST":
+        sign = fsign
         ifile = f"isoc_MIST2_z{sign}{np.abs(feh):3.2f}_afe{afe:+2.1f}.dat"
         absfile = os.path.join(sps_home, "ISOCHRONES", itype, ifile)
     else:
-        absfile = f"../data/isoc/mist_iso_v98/isoc_feh_{fsign}{np.abs(feh*100):03.0f}_afe_{asign}{np.abs(afe*10):01.0f}_vvcrit0.4_full.dat"
+        absfile = f"../data/mist/v2.2/isoc_feh_{fsign}{np.abs(feh*100):03.0f}_afe_{asign}{np.abs(afe*10):01.0f}_vvcrit0.4_full.dat"
     with open(absfile, "r") as f:
         # drop the comment hash and mags field
         header = f.readline().split()[1:]
@@ -42,19 +43,19 @@ def isoc_table(feh, afe, itype="MIST"):
 
 if __name__ == "__main__":
 
-    sedname, prefix = "lr", "c3k_lr"
-    sdir = f"../output/{sedname}"
+    sedname, prefix, vers = "lr", "c3k_lr", "v2.3"
+    sdir = f"/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/c3k_{vers}/fsps-lib/{sedname}"
     idir  = os.path.join(sps_home, "ISOCHRONES", "MIST")
 
     afelist = [-0.2, 0.0, 0.2, 0.4, 0.6]
     fehlist = np.genfromtxt(os.path.join(sdir, "for_fsps", f"{prefix}_zlegend.dat"))
     metlist = list(product(fehlist, afelist))
 
-    pdf = PdfPages("c3k_hrd.pdf")
+    pdf = PdfPages(f"./c3k_{vers}a_hrd.pdf")
 
     for feh, afe in metlist:
         #feh, afe = -0.25, 0.2
-        sname = template.format(sdir, "c3k_v1.3", feh, afe, sedname)
+        sname = template.format(sdir, f"c3k_{vers}", feh, afe, sedname)
         with h5py.File(sname.replace(".h5", ".rect.h5"), "r") as sdat:
             params = sdat["parameters"][:]
             if "extended" in sdat:
@@ -63,7 +64,8 @@ if __name__ == "__main__":
                 ext = np.zeros(len(params), dtype=bool)
 
         fig, ax = pl.subplots(figsize=(9, 6))
-        ax.plot(params["logt"], params["logg"], linestyle="", marker="o", color="gray", label="extrapolated")
+        ax.plot(params["logt"][ext == 1], params["logg"][ext == 1], linestyle="", marker="o", mfc="none", mec="k", mew=2, label="extrapolated in logg")
+        ax.plot(params["logt"][ext == 2], params["logg"][ext == 2], linestyle="", marker="o", color="grey", label="interpolated in logg")
         ax.plot(params["logt"][ext == 0], params["logg"][ext == 0], linestyle="", marker="o", color="black", label="native")
 
         try:

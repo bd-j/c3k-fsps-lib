@@ -4,7 +4,7 @@
 #SBATCH -n 1 # Number of cores requested
 #SBATCH -N 1 # Ensure that all cores are on one machine
 #SBATCH -t 6:00:00 # Runtime
-#SBATCH -p conroy_priority # Partition to submit to
+#SBATCH -p conroy_priority,shared # Partition to submit to
 #SBATCH --mem-per-cpu=2500 # Memory per node in MB (see also --mem-per-cpu)
 #SBATCH -o logs/c3k_resample_%A_%a.log # Standard out goes to this file
 #SBATCH -e logs/c3k_resample_%A_%a.log # Standard err goes to this file
@@ -31,7 +31,7 @@ seddir=$PROJECT_DIR/output/${libname}
 mkdir -p $seddir
 mkdir -p ${seddir}/for_fsps
 
-python c3k_resample.py --zindex ${SLURM_ARRAY_TASK_ID} --ck_vers c3k_v2.2 --oldz 0 \
+python c3k_resample.py --zindex ${SLURM_ARRAY_TASK_ID} --ck_vers c3k_v2.3 --oldz 0 \
                        --segment_file $segments --oversample 2 --sedname ${libname} \
                        --seddir ${seddir} --fulldir ${fulldir} --specdir spec --fluxdir flux \
                        --bindir ${seddir}/for_fsps \

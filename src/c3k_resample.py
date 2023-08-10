@@ -94,7 +94,7 @@ def rectify_sed(sedfile, rectified):
     fudged = np.zeros(len(params))
 
     # --- fudge some spectra ---
-    new_pars, new_spec = [], []
+    new_pars, new_spec, new_fudge = [], [], []
 
     # at each logt copy lowest logg to the two lower loggs
     for logt in tgrid:
@@ -108,10 +108,13 @@ def rectify_sed(sedfile, rectified):
                 news = spec[ind]
                 new_pars.append(newp)
                 new_spec.append(news)
+                new_fudge.append(1)
 
-    # at logt < 4 copy max(logg) (=5.0 hopefully) to logg<=5.5 if needed
+    lowt = tgrid[:16]
+
+    # at 3.8 < logt < 4 copy max(logg) (=5.0 hopefully) to logg<=5.5 if needed
     for logt in tgrid:
-        if logt > 4.0:
+        if (logt > 4.0) or (logt <= lowt.max()):
             continue
         this = params["logt"] == logt
         gmax = np.max(params[this]["logg"])
@@ -123,17 +126,17 @@ def rectify_sed(sedfile, rectified):
             news = spec[ind]
             new_pars.append(newp)
             new_spec.append(news)
+            new_fudge.extend([1])
 
-    # at lowest and second lowest logt, interpolate across holes in logg
-    for logt in tgrid[:2]:
+    # at all logt, interpolate across holes bracketed in logg
+    for logt in tgrid:
         this = params["logt"] == logt
         x = params[this]["logg"]
         y = spec[this, :]
         newg = [logg for logg in ggrid if
-                (logg > x.min()) & (logg < x.max()) and (logg not in x)]
+                (logg > x.min()) & (logg < x.max()) & (logg not in x)]
         if len(newg) == 0:
             continue
-
         newg = np.array(newg)
         f = interpolate.interp1d(x, y, axis=0, kind="linear")
         news = f(newg)
@@ -141,14 +144,44 @@ def rectify_sed(sedfile, rectified):
         newp["logg"] = newg
         new_pars.append(newp)
         new_spec.append(news)
+        new_fudge.extend(len(newg) * [2])
+
+    # at low logt (<~3.8), NN extrapolate from lower logg if missing
+    for logt in lowt:
+        this = params["logt"] == logt
+        x = params[this]["logg"]
+        y = spec[this, :]
+        newg = [logg for logg in ggrid if
+                (logg > x.max()) & (logg not in x)]
+        if len(newg) == 0:
+            continue
+        newg = np.array(newg)
+        f = interpolate.interp1d(x, y, axis=0, kind="nearest", fill_value="extrapolate")
+        news = f(newg)
+        newp = np.tile(params[this][0], len(newg))
+        newp["logg"] = newg
+        new_pars.append(newp)
+        new_spec.append(news)
+        new_fudge.extend(len(newg) * [1])
+
+    if False:
+        # at logt > 3.8, interpolate across holes in logg
+        hight = tgrid[16:]
+        for logg in ggrid:
+            this = params["logg"] == logg
+            x = params[this]["logt"]
+            newt = [logt for i, logt in enumerate(hight[1:-1]) if
+                    (hight[i-1] in x) & (hight[i+1] in x) and (logt not in x)]
+            new_fudge.extend(len(newt) * [3])
 
     new_pars = np.concatenate(new_pars)
     new_spec = np.concatenate(new_spec)
+    new_fudge = np.array(new_fudge)
 
     # concatenate the new models to the old ones
     params = np.concatenate([params, new_pars])
     spec = np.concatenate([spec, new_spec])
-    fudged = np.concatenate([fudged, np.ones(len(new_pars))])
+    fudged = np.concatenate([fudged, new_fudge])
 
     # write output to a file
     with h5py.File(rectified, "x") as sed:
