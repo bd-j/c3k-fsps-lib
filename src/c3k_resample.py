@@ -67,6 +67,10 @@ def sed(feh, afe, segments, args):
     fluxname = template.format(args.fulldir, args.fluxdir, args.ck_vers, feh, afe, "flux")
     outname = template.format(args.seddir, "", args.ck_vers, feh, afe, args.sedname)
 
+    logger.info(f"reading spec from {specname}")
+    logger.info(f"reading flux from {fluxname}")
+    logger.info(f"putting output at {outname}")
+
     # Read Files and make the sed file
     specfile = h5py.File(specname, "r")
     fluxfile = h5py.File(fluxname, "r")
@@ -357,6 +361,7 @@ if __name__ == "__main__":
 
     # -- Mess with some args ---
     args.fulldir = args.fulldir.format(args.ck_vers)
+    logger.info(f"reading spectra from {args.fulldir}")
     if args.bindir == "":
         args.bindir = f"{args.seddir}/for_fsps"
 
