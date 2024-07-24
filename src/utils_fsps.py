@@ -13,7 +13,8 @@ import h5py
 from utils import read_binary_spec
 from prospect.sources import StarBasis
 
-__all__ = ["get_kiel_grid", "get_binary_spec", "interpolate_to_grid", "interpolate_to_basel"]
+__all__ = ["get_kiel_grid", "get_binary_spec",
+           "interpolate_to_grid", "interpolate_to_basel"]
 
 
 def dict_struct(strct):

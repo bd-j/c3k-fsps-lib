@@ -8,7 +8,7 @@ import h5py
 
 
 __all__ = ["get_ckc_parser",
-           "segements_to_wavelength", "construct_outwave",
+           "segments_to_wavelength", "construct_outwave",
            "convert_resolution",
            "read_binary_spec", "sed_to_bin"]
 

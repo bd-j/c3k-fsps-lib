@@ -75,7 +75,7 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
 5. Implement in FSPS
 
    This depends a bit on what version of FSPS you have. Instructions her are for
-   the 'older' FSPS.Assuming you have downloaded FSPS, the first thing to do is
+   the 'older' FSPS. Assuming you have downloaded FSPS, the first thing to do is
    copy the relevant files to the FSPS repo.  Note this changes version tracked
    files!  The prefix also changes.
 
@@ -91,7 +91,7 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    environment variables in the ``elif (C3K)`` block; the values for `nzinit`
    and `nspec` can be obtained by `wc` on the `*.lambda` and `*_zlegend.dat`
    files, and the `spec_type` variable (and its length!) could be changed to
-   e.g. `c3k_ns_afe+0.0`. Here's what the diff of `sps_vars.f90` looks like with
+   e.g. `c3k_ns`. Here's what the diff of `sps_vars.f90` looks like with
    `nz=11`, `nspec=13749` and a prefix of `c3k_ns`:
 
    ```diff
@@ -126,8 +126,8 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    This looks like:
 
    ```sh
-   cp <path/to/output/libname>/for_fsps/c3k_afe+0.0* $SPS_HOME/SPECTRA/C3K/
-   cp <path/to/output/libname>/for_fsps/c3k_afe+0.0_zlegend.dat $SPS_HOME/SPECTRA/C3K/zlegend.dat
+   cp <path/to/output/libname>/for_fsps/c3k_ns* $SPS_HOME/SPECTRA/C3K/
+   cp <path/to/output/libname>/for_fsps/c3k_ns_zlegend.dat $SPS_HOME/SPECTRA/C3K/zlegend.dat
 
    git clone --recursive https://github.com/dfm/python-fsps.git
    <change python-fsps/fsps/src/fsps/libfsps/src/sps_vars.f90 as in step 5>
@@ -152,3 +152,5 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
 
    You can also plot the grid for every metallicity and the corresponding
    isochrones with `make_hrd.py`
+
+   It might also be instructive to compare the SSP spectra to another library (e.g. MILES)

@@ -416,9 +416,14 @@ if __name__ == "__main__":
             grid_pars, bwave, bspec, inds = out
 
     # --- Make the binary file from the interpolated grid ---
+    major = args.ck_vers.split("v")[-1][0]
+    if major == "1":
+        zsol = 0.0134
+    elif major == "2":
+        zsol = 0.019
     if args.make_bins:
         logger.info(f"Making spectral binary file at {args.bindir} with prefix {args.prefix}")
-        to_bin(feh=feh, afe=afe, args=args)
+        to_bin(feh=feh, afe=afe, args=args, zsol=zsol)
         if ((afe == 0) & (feh == 0)) | (args.force_meta == args.zindex):
             logger.info("Making FSPS metadata files")
-            make_fsps_metadata(fehlist, args)
+            make_fsps_metadata(fehlist, args, zsol=zsol)
