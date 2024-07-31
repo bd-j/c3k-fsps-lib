@@ -9,8 +9,8 @@ Resolution is specified in a yml file as tuples of `(lambda_low, lambda_hi, R, u
 
 Note the c3k_v1.3 default resolutions are
 
-* 0.09micron - 0.0912micron; opacity binning with wavelength spacing lambda/Delta_lambda=4500
-* 009121micron - 2.5micron; opacity binning with wavelength spacing lambda/Delta_lambda=100000
+* 0.009micron - 0.0912micron; opacity binning with wavelength spacing lambda/Delta_lambda=4500
+* 0.09121micron - 2.5micron; opacity binning with wavelength spacing lambda/Delta_lambda=100000
 * 2.5micron - 40micron; opacity binning with wavelength spacing lambda/Delta_lambda=4500
 
 Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.

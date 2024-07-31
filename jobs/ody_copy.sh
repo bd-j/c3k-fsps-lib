@@ -16,7 +16,7 @@ echo 'libname='$libname
 # directory and label for output
 PROJECT_DIR=$SCRATCH/conroy_lab/$USER/c3k-fsps-lib
 cvers=c3k_v2.3
-synthe=optfal
+synthe=vt10_uncal
 seddir=$PROJECT_DIR/output/${cvers}_${synthe}/${libname}
 storage=/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/${cvers}/${synthe}/fsps-lib
 mkdir -p $storage

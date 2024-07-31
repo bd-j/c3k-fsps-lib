@@ -23,7 +23,7 @@ cd $PROJECT_DIR/src
 
 # location of spec and flux HDF5 files
 ck_vers=c3k_v2.3
-synthe=optfal
+synthe=vt10_uncal
 fulldir="/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/{}"/${synthe}
 # segment specification
 segments=$PROJECT_DIR/segments/segments_${libname}.yml
@@ -33,7 +33,10 @@ seddir=$PROJECT_DIR/output/${ck_vers}_${synthe}/${libname}
 mkdir -p $seddir
 mkdir -p ${seddir}/for_fsps
 
-python c3k_resample.py --zindex ${SLURM_ARRAY_TASK_ID} --ck_vers $ck_vers --oldz 0 \
+zind=${SLURM_ARRAY_TASK_ID}
+#zind=-1
+
+python c3k_resample.py --zindex $zind --ck_vers $ck_vers --oldz 0 \
                        --segment_file $segments --oversample 2 --sedname ${libname} \
                        --seddir ${seddir} --fulldir ${fulldir} --specdir spec --fluxdir flux \
                        --bindir ${seddir}/for_fsps \
