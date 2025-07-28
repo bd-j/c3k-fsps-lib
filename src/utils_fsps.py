@@ -8,10 +8,9 @@ BaSeL parameter grid expected by fsps.  Lots of interpolation.
 import os
 from itertools import product
 import numpy as np
-import h5py
 
 from utils import read_binary_spec
-from prospect.sources import StarBasis
+
 
 __all__ = ["get_kiel_grid", "get_binary_spec",
            "interpolate_to_grid", "interpolate_to_basel"]
