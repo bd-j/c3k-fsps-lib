@@ -16,6 +16,33 @@ import constants
 
 
 def segments_to_wavelength(segments, oversample=2):
+    """
+    Given a list of segments, each of which is a tuple
+    (lo, hi, rout, use_fft), construct a wavelength grid that
+    properly samples the resolution of each segment.
+
+    Parameters
+    ----------
+    segments : list of tuples
+        Each tuple contains (lo, hi, rout, log) where
+        - lo : float, lower wavelength limit of the segment (AA)
+        - hi : float, upper wavelength limit of the segment (AA)
+        - rout : float, the resolution of the segment (lambda/FWHM)
+        - use_fft : bool, whether the segment is to use FFT or not.
+
+    oversample : float, optional (default: 2)
+        The number of pixels per FWHM.
+
+    Retuns
+    -------
+    wave : ndarray
+        The output wavelength vector, concatenated from all segments.
+
+    res : ndarray
+        The resolution vector, same shape as `wave`, containing the resolution
+        at each eavelength.
+    """
+
     outwave = [construct_outwave(lo, hi, resolution=rout, logarithmic=True, oversample=oversample)[:-1]
                for (lo, hi, rout, _) in segments]
     res = [np.ones_like(w)*rout for w, (lo, hi, rout, _) in zip(outwave, segments)]

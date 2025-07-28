@@ -8,16 +8,18 @@ the logt-logg grid for fsps.
 import sys, os, shutil
 from itertools import product
 import logging
+from types import SimpleNamespace
 
 import numpy as np
 import h5py
 from scipy import interpolate
+import yaml
 
 from prospect.sources import StarBasis
 from utils_resample import make_seds
 from utils_fsps import get_kiel_grid, interpolate_to_grid
 from utils_fsps import get_binary_spec, interpolate_to_basel
-from utils import get_ckc_parser, sed_to_bin
+from utils import get_ckc_parser, sed_to_bin, segments_to_wavelength
 import constants
 
 
@@ -30,6 +32,48 @@ logger.setLevel(logging.INFO)
 
 
 template = "{}/{}/{}_feh{:+3.2f}_afe{:+2.1f}.{}.h5"
+
+
+def get_parser():
+    # These are the set of feh and afe from which we will choose based on zindex
+    # These can be *OVERIDDEN* in a segments file.
+    fehlist = [-2.0, -1.75, -1.5, -1.25, -1.0,
+               -0.75, -0.5, -0.25, 0.0, 0.25, 0.5]
+    afelist = [-0.2, 0.0, +0.2, +0.4, +0.6]
+
+    parser = get_ckc_parser()
+    parser.add_argument("--debug", type=int, default=0,
+                        help="Whether to halt after readng configs")
+    # grids
+    parser.add_argument("--use_basel_grid", type=int, default=0,
+                        help="Switch to using the BaSeL logt-logg grid instead of the one in ../data/log*.dat")
+    parser.add_argument("--fehlist", type=float, nargs='+', default=fehlist,
+                        help="List of [Fe/H] values to use for the grid, can be overrridden by segments file")
+    parser.add_argument("--afelist", type=float, nargs='+', default=afelist,
+                        help="List of [alpha/Fe] values to use for the grid, can be overrridden by segments file")
+    parser.add_argument("--rectify", type=int, default=1,
+                        help="Whether to fix some holes in the C3K grid before interpolating to FSPS grid")
+
+    # Things to do
+    parser.add_argument("--make_seds", type=int, default=1,
+                        help="Whether to make the HDF5 files with resampled SEDs")
+    parser.add_argument("--make_grid", type=int, default=1,
+                        help="Whether to interpolate the resampled SEDs to the FSPS logt-logg grid")
+    parser.add_argument("--make_bins", type=int, default=1,
+                        help="Whether to make the binary files from the interpolated SEDs")
+    parser.add_argument("--force_meta", type=int, default=-1,
+                        help=("If set to a zindex, will force the metadata files "
+                              "to be written for that metallicity."))
+
+    # Filenames and output locations
+    parser.add_argument("--oldz", type=int, default=0,
+                        help="Whether to use the old naming scheme of absolute z for binary files, e.g. z=0.0200 instead of feh=0.0, afe=0.0")
+    parser.add_argument("--bindir", type=str, default="",
+                        help="location of binary files")
+    parser.add_argument("--nowrite", type=int, default=0,
+                        help=("If set, will not write the output to HDF5, "
+                              "but return the interpolated spectra instead."))
+    return parser
 
 
 def sed(feh, afe, segments, args):
@@ -340,23 +384,7 @@ def make_fsps_metadata(fehlist, args, zsol=0.0134):
 
 if __name__ == "__main__":
 
-    # These are the set of feh and afe from which we will choose based on zindex
-    # These can be *OVERIDDEN* in a segments file.
-    fehlist = [-2.0, -1.75, -1.5, -1.25, -1.0,
-               -0.75, -0.5, -0.25, 0.0, 0.25, 0.5]
-    afelist = [-0.2, 0.0, +0.2, +0.4, +0.6]
-
-    parser = get_ckc_parser()
-    parser.add_argument("--use_basel_grid", type=int, default=0)
-    parser.add_argument("--rectify", type=int, default=1)
-    parser.add_argument("--oldz", type=int, default=0)
-    parser.add_argument("--make_seds", type=int, default=1)
-    parser.add_argument("--make_grid", type=int, default=1)
-    parser.add_argument("--make_bins", type=int, default=1)
-    parser.add_argument("--force_meta", type=int, default=-1)
-    parser.add_argument("--bindir", type=str, default="",
-                        help="location of binary files")
-    parser.add_argument("--nowrite", type=int, default=0)
+    parser = get_parser()
     args = parser.parse_args()
 
     # -- Mess with some args ---
@@ -368,15 +396,11 @@ if __name__ == "__main__":
     # --- read and copy segment file if it exists --
     if args.segment_file:
         logger.info(f"Reading segments from {args.segment_file}")
-        import yaml
-        import shutil
         with open(args.segment_file) as f:
             config = yaml.load(f, Loader=yaml.Loader)
-        segments = config["segments"]
-        if "fehlist" in config:
-            fehlist = np.concatenate(config["fehlist"])
-        if "afelist" in config:
-            afelist = np.concatenate(config["afelist"])
+
+        # update the args namespace
+        args = SimpleNamespace(**{**vars(args), **config})
         if "oversample" in config:
             args.oversample = config["oversample"]
             logger.info(f"Using oversample={args.oversample} from {args.segment_file}")
@@ -393,20 +417,27 @@ if __name__ == "__main__":
         except:
             pass
 
+    wave, res = segments_to_wavelength(args.segments, oversample=args.oversample)
+    logger.info(f"Using {len(wave)} wavelength points in the output SEDs")
+
+    if args.debug:
+        logger.info("Debug mode: halting after reading configs")
+        sys.exit(0)
+
     # --- CHOOSE THE METALLICITY ---
     if args.zindex < 0:
         # for testing off odyssey
         feh, afe = 0.0, 0.0
         fehlist = [feh]
     else:
-        metlist = list(product(fehlist, afelist))
+        metlist = list(product(args.fehlist, args.afelist))
         feh, afe = metlist[args.zindex]
     logger.info(f"Working on [Fe/H]={feh}, [alpha/Fe]={afe}")
 
     # --- make the sed file ---
     if args.make_seds:
         logger.info("Making H5 files with SEDs smoothed and stitched from native C3K spectral resolution")
-        sedfile = sed(feh, afe, segments, args)
+        sedfile = sed(feh, afe, args.segments, args)
 
     # --- Make the SED interpolated to FSPS logt, logg grid ---
     if args.make_grid:
@@ -426,4 +457,4 @@ if __name__ == "__main__":
         to_bin(feh=feh, afe=afe, args=args, zsol=zsol)
         if ((afe == 0) & (feh == 0)) | (args.force_meta == args.zindex):
             logger.info("Making FSPS metadata files")
-            make_fsps_metadata(fehlist, args, zsol=zsol)
+            make_fsps_metadata(args.fehlist, args, zsol=zsol)
