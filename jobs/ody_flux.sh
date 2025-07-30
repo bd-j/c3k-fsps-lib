@@ -11,7 +11,7 @@
 
 
 source activate c3k
-mkdir -p $SCRATCH/conroy_lab/$USER/run_ckc
+mkdir -p $SCRATCH/conroy_lab/Lab/$USER/run_ckc
 cd $SCRATCH/conroy_lab/$USER/c3k-fsps-lib/src
 
 python make_flux.py --np=${SLURM_JOB_CPUS_PER_NODE} --feh=-99 --ck_vers=c3k_v1.3

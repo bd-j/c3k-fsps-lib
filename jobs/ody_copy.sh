@@ -5,7 +5,7 @@
 #SBATCH -N 1 # Ensure that all cores are on one machine
 #SBATCH -t 1:00:00 # Runtime
 #SBATCH -p conroy_priority,shared,sapphire # Partition to submit to
-#SBATCH --mem-per-cpu=4000 # Memory per node in MB (see also --mem-per-cpu)
+#SBATCH --mem-per-cpu=4000 # Memory per cpu in MB
 #SBATCH -o logs/c3k_copy_%A.log # Standard out goes to this file
 #SBATCH -e logs/c3k_copy_%A.log # Standard err goes to this file
 
@@ -20,7 +20,7 @@ echo 'ck_vers='$ck_vers
 echo 'synthe='$synthe
 
 # directory and label for output
-PROJECT_DIR=$SCRATCH/conroy_lab/$USER/c3k-fsps-lib
+PROJECT_DIR=$SCRATCH/conroy_lab/Lab/$USER/c3k-fsps-lib
 seddir=$PROJECT_DIR/output/${ck_vers}/${synthe}/${libname}
 storage=/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/${ck_vers}/${synthe}/fsps-lib
 
