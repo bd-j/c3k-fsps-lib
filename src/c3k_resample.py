@@ -382,12 +382,8 @@ def make_fsps_metadata(fehlist, args, zsol=0.0134):
     return
 
 
-if __name__ == "__main__":
+def update_config(args):
 
-    parser = get_parser()
-    args = parser.parse_args()
-
-    # -- Mess with some args ---
     args.fulldir = args.fulldir.format(args.ck_vers)
     logger.info(f"reading spectra from {args.fulldir}")
     if args.bindir == "":
@@ -409,14 +405,35 @@ if __name__ == "__main__":
         if ("tag" in config) and (args.prefix == ""):
             args.prefix = f"{config['tag']}"
 
+        # flatten the fehlist and afelist if they are lists of lists
+        try:
+            args.fehlist = np.concatenate(args.fehlist)
+        except:
+            pass
+        try:
+            args.afelist = np.concatenate(args.afelist)
+        except:
+            pass
+
+        # copy the segment file and actual args to the output directory
         _ = shutil.copy(args.segment_file, args.seddir)
         try:
             import json
-            with open(os.path.join(args.segment_file, "args.json"), "w") as out:
+            with open(os.path.join(args.seddir, "args.json"), "w") as out:
                 json.dump(args, out)
         except:
             pass
 
+    return args
+
+
+if __name__ == "__main__":
+
+    parser = get_parser()
+    args = parser.parse_args()
+
+    # -- Mess with some args based on the segment_file ---
+    args = update_config(args)
     wave, res = segments_to_wavelength(args.segments, oversample=args.oversample)
     logger.info(f"Using {len(wave)} wavelength points in the output SEDs")
 
