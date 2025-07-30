@@ -17,7 +17,7 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
 
 ## Procedure
 
-1. Install.  You should have FSPS already installed and `$SPS_HOME` environment
+0. Install.  You should have FSPS already installed and `$SPS_HOME` environment
    variable set.
 
    ```sh
@@ -31,11 +31,19 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
    cd ..
    ```
 
+1. Set your spectra versions
+
+   ```sh
+   ck_vers=c3k_v2.3    # atmospheres
+   synthe=vt10_allfal  # synthe settings
+   libname=nirspec     # name of the segments_<libname>.yml file
+   ```
+
 2. Check that all the relevant flux files are there
 
    ```sh
-   fdir=/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/c3k_v1.3/fullres
-   for f in $fdir/*full*h5; do ls ${f/.full./.flux.}; done
+   fdir=/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/${ck_vers}/${synthe}
+   for f in $fdir/spec/*spec*h5; do ls ${f//spec/flux}; done
    ```
 
    If they are not, then you need to make them using `make_flux.py`, driven by
@@ -48,28 +56,26 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
 
    ```sh
    cd jobs/
-   libname=nirspec # name of the segments_<libname>.yml file
-   sbatch --export=ALL,libname=${libname} --array=0-64 ody_resample.sh
+   sbatch --export=ALL,libname=${libname},ck_vers=$ck_vers,synthe=$synthe --array=0-64 ody_resample.sh
    ```
 
    Note that you may wish to change the resampling here, the metallicities to
    consider, or the output filename and directory.  The output names are given
    by the supplied `libname` and the metallicities to consider are
    specified in `c3k_resample.py`.  The number of jobs in the array should be
-   equal to the number of feh-afe pairs (usually 13 * N_afe)
+   equal to the number of feh-afe pairs (usually 13 * `N_afe`)
 
    There are now several sets of binary files and ancillary files in the
-   `output/${libname}/for_fsps/` directory (by default) that can be moved to the
+   `output/${ck_vers}/${synthe}/${libname}/for_fsps/` directory (by default) that can be moved to the
    ```$SPS_HOME/SPECTRA/C3K``` directory.  By altering `sps_vars.f90` you can
    choose to use these spectra.
 
 4. If you're me the `output/${libname}` directory should be copied to
-   `/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/${ck_vers}/fsps-lib/`
+   `/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/${ck_vers}/${synthe}/fsps-lib/${libname}`
 
    ```sh
    cd jobs/
-   libname=nirspec # name of the segments_<libname>.yml file
-   sbatch --export=ALL,libname=${libname} ody_copy.sh
+   sbatch --export=ALL,libname=${libname},ck_vers=$ck_vers,synthe=$synthe ody_copy.sh
    ```
 
 5. Implement in FSPS

@@ -9,16 +9,21 @@
 #SBATCH -o logs/c3k_copy_%A.log # Standard out goes to this file
 #SBATCH -e logs/c3k_copy_%A.log # Standard err goes to this file
 
-date; hostname; pwd
-echo 'libname='$libname
+# call the script with
+# --export=ALL,libname=<libname>,ck_vers=<ck_vers>,synthe=synthe
+# with <libname>=(hr/lr/etc.), ck_vers=(c3k_v1.3/c3k_v2.3/etc.), synthe=(vt10_allfal/vt10_optfal etc.)
 
+date; hostname; pwd
+
+echo 'libname='$libname
+echo 'ck_vers='$ck_vers
+echo 'synthe='$synthe
 
 # directory and label for output
 PROJECT_DIR=$SCRATCH/conroy_lab/$USER/c3k-fsps-lib
-cvers=c3k_v2.3
-synthe=vt10_uncal
-seddir=$PROJECT_DIR/output/${cvers}_${synthe}/${libname}
-storage=/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/${cvers}/${synthe}/fsps-lib
+seddir=$PROJECT_DIR/output/${ck_vers}/${synthe}/${libname}
+storage=/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/${ck_vers}/${synthe}/fsps-lib
+
 mkdir -p $storage
 rm -rf ${storage}/${libname}
 cp -r ${seddir} ${storage}/

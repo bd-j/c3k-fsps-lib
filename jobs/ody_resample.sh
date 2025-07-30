@@ -9,11 +9,11 @@
 #SBATCH -o logs/c3k_resample_%A_%a.log # Standard out goes to this file
 #SBATCH -e logs/c3k_resample_%A_%a.log # Standard err goes to this file
 
-# call the script with --export=ALL,libname=<libname> (hr/lr/etc.)
+# call the script with
+# --export=ALL,libname=<libname>,ck_vers=<ck_vers>,synthe=synthe
+# with <libname>=(hr/lr/etc.), ck_vers=(c3k_v1.3/c3k_v2.3/etc.), synthe=(vt10_allfal/vt10_optfal etc.)
 
 date; hostname; pwd
-echo $libname
-
 module purge
 module load python/3.10.9-fasrc01
 
@@ -21,15 +21,21 @@ source activate c3k
 PROJECT_DIR=$SCRATCH/conroy_lab/$USER/c3k-fsps-lib
 cd $PROJECT_DIR/src
 
+echo 'libname='$libname
+echo 'ck_vers='$ck_vers
+echo 'synthe='$synthe
+
 # location of spec and flux HDF5 files
-ck_vers=c3k_v2.3
-synthe=vt10_uncal
+# these should be set when calling the slurm job
+#ck_vers=c3k_v2.3
+#synthe=vt10_uncal
+
 fulldir="/n/holystore01/LABS/conroy_lab/Lab/bdjohnson/data/kurucz/{}"/${synthe}
 # segment specification
 segments=$PROJECT_DIR/segments/segments_${libname}.yml
 
 # directory and label for output
-seddir=$PROJECT_DIR/output/${ck_vers}_${synthe}/${libname}
+seddir=$PROJECT_DIR/output/${ck_vers}/${synthe}/${libname}
 mkdir -p $seddir
 mkdir -p ${seddir}/for_fsps
 
