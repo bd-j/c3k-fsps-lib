@@ -110,6 +110,8 @@ def sed(feh, afe, segments, args):
     specname = template.format(args.fulldir, args.specdir, args.ck_vers, feh, afe, "spec")
     fluxname = template.format(args.fulldir, args.fluxdir, args.ck_vers, feh, afe, "flux")
     outname = template.format(args.seddir, "", args.ck_vers, feh, afe, args.sedname)
+    if os.path.exists(outname):
+        os.remove(outname)
 
     logger.info(f"reading spec from {specname}")
     logger.info(f"reading flux from {fluxname}")
