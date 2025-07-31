@@ -3,7 +3,7 @@
 #SBATCH -J c3k_fsps
 #SBATCH -n 1 # Number of cores requested
 #SBATCH -N 1 # Ensure that all cores are on one machine
-#SBATCH -t 6:00:00 # Runtime
+#SBATCH -t 12:00:00 # Runtime
 #SBATCH -p conroy_priority,shared,sapphire # Partition to submit to
 #SBATCH --mem-per-cpu=2500 # Memory per cpu in MB
 #SBATCH -o logs/c3k_resample_%A_%a.log # Standard out goes to this file
