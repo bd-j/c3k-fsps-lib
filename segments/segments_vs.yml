@@ -9,12 +9,12 @@ tag:
 
 # number of pixels per FWHM
 oversample:
-  2
+  3
 
 segments:
   - [100,        1000,   100, False]
   - [1000,       3900,   500, False]
-  - [3900.5,     6000, 15000,  True]
+  - [3900.5,     6000, 30000,  True]
   - [6001,      10000,   500,  True]
   - [10001,     24999,   100, False]
   - [25000, 100000000,    50,  True]
