@@ -56,7 +56,7 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
 
    ```sh
    cd jobs/
-   sbatch --export=ALL,libname=${libname},ck_vers=$ck_vers,synthe=$synthe --array=0-64 ody_resample.sh
+   sbatch --export=ALL,libname=${libname},ck_vers=${ck_vers},synthe=${synthe} --array=0-64 ody_resample.sh
    ```
 
    Note that you may wish to change the resampling here, the metallicities to
@@ -75,7 +75,7 @@ Beyond 40 microns we stitch a Rayleigh-Jeans tail onto the spectra.
 
    ```sh
    cd jobs/
-   sbatch --export=ALL,libname=${libname},ck_vers=$ck_vers,synthe=$synthe ody_copy.sh
+   sbatch --export=ALL,libname=${libname},ck_vers=${ck_vers},synthe=${synthe} ody_copy.sh
    ```
 
 5. Implement in FSPS

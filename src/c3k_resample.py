@@ -361,13 +361,19 @@ def make_fsps_metadata(fehlist, args, zsol=0.0134):
         zlegend.write("{}\n".format(zstr))
     zlegend.close()
 
+
+    if args.ck_vers == "c3k_v1.3":
+        hires_lim = (1e3, 2.5e4)
+    else:
+        hires_lim=(3e3, 2.5e4)
+
     # Now make the wavelength file
     sedfile = template.format(args.seddir, "", args.ck_vers, 0.0, 0.0, args.sedname)
     with h5py.File(sedfile, "r") as f:
         wave = np.array(f["wavelengths"])
         res = f["resolution"][:]
         vres = constants.ckms / res / constants.sigma_to_fwhm
-        indef = (wave < 1e3) | (wave > 2.5e4)
+        indef = (wave < hires_lim[0]) | (wave > hires_lim[1])
         vres[indef] = -1 * vres[indef]
     wfile = open(wname, "w")
     lfile = open(lname, "w")
