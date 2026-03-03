@@ -32,7 +32,7 @@ def isoc_table(feh, afe, itype="MIST"):
         ifile = f"isoc_MIST2_z{sign}{np.abs(feh):3.2f}_afe{afe:+2.1f}.dat"
         absfile = os.path.join(sps_home, "ISOCHRONES", itype, ifile)
     else:
-        absfile = f"../data/mist/v2.2/isoc_feh_{fsign}{np.abs(feh*100):03.0f}_afe_{asign}{np.abs(afe*10):01.0f}_vvcrit0.4_full.dat"
+        absfile = f"../data/isoc/mist2_iso/isoc_feh_{fsign}{np.abs(feh*100):03.0f}_afe_{asign}{np.abs(afe*10):01.0f}_vvcrit0.4_full.dat"
     with open(absfile, "r") as f:
         # drop the comment hash and mags field
         header = f.readline().split()[1:]
