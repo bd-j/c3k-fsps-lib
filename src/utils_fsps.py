@@ -31,7 +31,7 @@ def get_kiel_grid(basel=False):
     if basel:
         dirn = os.path.join(os.environ["SPS_HOME"], "SPECTRA", "BaSeL3.1")
         pre = "basel_"
-        logt = np.np.genfromtxt(f"{dirn}/{pre}logt.dat")
+        logt = np.genfromtxt(f"{dirn}/{pre}logt.dat")
     else:
         dirn = "../data"
         pre = ""
@@ -74,9 +74,9 @@ def interpolate_to_basel(grid_pars, interpolator, valid=True, verbose=True):
     """
     bwave = interpolator.wavelengths
     allspec = []
-    outside = np.zeros(len(grid_pars))
-    inside = np.zeros(len(grid_pars))
-    extreme = np.zeros(len(grid_pars))
+    outside = np.zeros(len(grid_pars), dtype=bool)
+    inside = np.zeros(len(grid_pars), dtype=bool)
+    extreme = np.zeros(len(grid_pars), dtype=bool)
 
     for i, (p, v) in enumerate(zip(grid_pars, valid)):
         inds, wghts = interpolator.weights(**dict_struct(p))
